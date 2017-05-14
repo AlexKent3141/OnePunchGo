@@ -3,8 +3,8 @@
 
 #include "Move.h"
 #include "Types.h"
+#include <cassert>
 #include <vector>
-#include <iostream>
 
 // The data for a single point on the Go board.
 struct Point
@@ -28,12 +28,42 @@ public:
     // Check the legality of the specified move in this position.
     bool IsLegal(Colour col, int point) const
     {
-        return true;
+        // Check occupancy.
+        const Point& pt = _points[point];
+        bool legal = pt.Col == None;
+        if (legal)
+        {
+            // Check for suicide.
+            int liberties = 0;
+            for (const Point* const n : pt.Neighbours)
+            {
+                if (n->Col == None)
+                {
+                    ++liberties;
+                }
+                else if (n->Col == col)
+                {
+                    liberties += n->Liberties-1;
+                }
+                else
+                {
+                    if (n->Liberties == 1)
+                        ++liberties;
+                }
+            }
+
+            legal = liberties > 0;
+
+            // TODO: Check for board state repetition.
+        }
+
+        return legal;
     }
 
     // Update the board state with the specified move.
     void MakeMove(const Move& move)
     {
+        assert(IsLegal(move.Col, move.Point));
     }
 
     // Get all moves available for the current colour.
