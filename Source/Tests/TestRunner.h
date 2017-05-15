@@ -38,6 +38,7 @@ public:
                 inTest = false;
                 pass = test.Run(lines);
                 std::cout << (pass ? "PASS" : "FAIL") << std::endl;
+                lines.clear();
             }
             else if (inTest)
             {
