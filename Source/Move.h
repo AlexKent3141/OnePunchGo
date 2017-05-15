@@ -13,13 +13,21 @@ struct Move
 };
 
 // Get the string representation of the move.
-inline std::string mtos(const Move& move, int n)
+inline std::string MoveToString(const Move& move, int n)
 {
     assert(move.Col != None);
     std::string s = move.Col == Black ? "B " : "W "; 
     s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[move.Point % n];
     s += std::to_string(move.Point / n + 1);
     return s;
+}
+
+inline Move StringToMove(const std::string& str, int n)
+{
+    Colour col = str[0] == 'B' ? Black : White;
+    int file = std::string("ABCDEFGHJKLMNOPQRSTUVWXYZ").find(str[2]);
+    int rank = stoi(str.substr(3)) - 1;
+    return {col, file + rank*n};
 }
 
 #endif // __MOVE_H__

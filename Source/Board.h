@@ -4,7 +4,9 @@
 #include "Move.h"
 #include "Types.h"
 #include <cassert>
+#include <algorithm>
 #include <vector>
+#include <string>
 
 // The data for a single point on the Go board.
 struct Point
@@ -25,6 +27,9 @@ public:
     {
         this->InitialiseNeighbours();
     }
+
+    // Get the colour at the specified location.
+    inline Colour PointColour(int loc) const { return _points[loc].Col; }
 
     // Check the legality of the specified move in this position.
     bool IsLegal(Colour col, int point) const
@@ -92,7 +97,7 @@ public:
         {
             if (n->Col != None)
             {
-                if (n->Col != pt.Col && n->Liberties == 1)
+                if (n->Col != move.Col && n->Liberties == 1)
                 {
                     FFCapture(n, requireUpdate);
                 }
@@ -106,11 +111,34 @@ public:
         // Update the liberties of the affected stones.
         for (int i = 0; i < N*N; i++)
         {
-            if (requireUpdate(i))
+            if (requireUpdate[i])
             {
-                FFLiberties(&_points[i]);
+                int liberties = 0;
+                std::vector<Point*> group;
+                std::vector<Point*> considered;
+                FFLiberties(&_points[i], requireUpdate, liberties, group, considered);
             }
         }
+
+        this->_colourToMove = this->_colourToMove == Black ? White : Black;
+    }
+
+    std::string ToString() const
+    {
+        std::string s;
+        Colour col;
+        for (int r = N-1; r >= 0; r--)
+        {
+            for (int c = 0; c < N; c++)
+            {
+                col = _points[r*N+c].Col;
+                s += col == None ? '.' : col == Black ? 'B' : 'W';
+            }
+
+            s += '\n';
+        }
+
+        return s;
     }
 
 private:
@@ -135,19 +163,21 @@ private:
 
     // Flood fill algorithm which updates the liberties for all stones in the group containing
     // the specified point.
-    void FFLiberties(Point* const pt, bool* requireUpdate, int liberties = 0, std::vector<Point*> group = std::vector<Point*>(), bool root = true)
+    void FFLiberties(Point* const pt, bool* requireUpdate, int& liberties, std::vector<Point*>& group, std::vector<Point*>& considered, bool root = true)
     {
-        Colour origCol = pt->Col;
+        group.push_back(pt);
         for (Point* const n : pt->Neighbours)
         {
-            if (n->Col == origCol)
+            if (n->Col == pt->Col &&
+                std::find(group.begin(), group.end(), n) == group.end())
             {
-                group.push_back(n);
-                FFLiberties(n, requireUpdate, liberties, group, false);
+                FFLiberties(n, requireUpdate, liberties, group, considered, false);
             }
-            else if (n->Col == None)
+            else if (n->Col == None &&
+                std::find(considered.begin(), considered.end(), n) == considered.end())
             {
                 ++liberties;
+                considered.push_back(n);
             }
         }
 

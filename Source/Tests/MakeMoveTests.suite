@@ -1,0 +1,71 @@
+# Tests which exercise the legality and move making functionality.
+# Each test consists of a 9x9 game record followed by the final position.
+# Note: Each game in this file is played on a 9x9 board.
+Begin: saraneth vs 1118aq 05/05/2017
+Moves:
+B E5
+W E7
+B C6
+W G6
+B G5
+W D3
+B F6
+W F7
+B H6
+W D5
+B D6
+W E6
+B G7
+W E4
+B F5
+W C8
+B C5
+W D4
+B B3
+W C7
+B C2
+W G3
+B D2
+W H4
+B H5
+W E2
+B B7
+W B8
+B D7
+W D8
+B G8
+W B6
+B B5
+W A7
+B E8
+W E9
+B F9
+W F2
+B F4
+W A5
+B A4
+W A6
+B J4
+W J3
+B J5
+W D9
+B F3
+W E3
+B H2
+W H3
+B G2
+W B4
+B C4
+W C3
+B F8
+Final:
+...WWB...
+.WWWBBB..
+W.WB..B..
+WWBB.B.B.
+WBBWBBBBB
+B.BWWB.WB
+.BWWWBWWW
+..BBWWBB.
+.........
+End
