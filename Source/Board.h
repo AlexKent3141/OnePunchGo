@@ -3,6 +3,7 @@
 
 #include "Move.h"
 #include "Types.h"
+#include "Zobrist.h"
 #include <cassert>
 #include <algorithm>
 #include <vector>
@@ -12,6 +13,7 @@
 struct Point
 {
     Colour Col;
+    int GroupSize;
     int Liberties;
     int Loc;
     std::vector<Point*> Neighbours;
@@ -26,21 +28,24 @@ public:
     Board()
     {
         this->InitialiseNeighbours();
+        _hashes[0] = Zobrist<N>::Instance()->BlackTurn();
     }
 
     // Get the colour at the specified location.
     inline Colour PointColour(int loc) const { return _points[loc].Col; }
 
     // Check the legality of the specified move in this position.
-    bool IsLegal(Colour col, int point) const
+    bool IsLegal(Colour col, int loc) const
     {
         // Check occupancy.
-        const Point& pt = this->_points[point];
+        const Point& pt = this->_points[loc];
         bool legal = pt.Col == None;
         if (legal)
         {
-            // Check for suicide.
+            // Check for suicide and ko.
             int liberties = 0;
+            int captureLoc;
+            int capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
             for (const Point* const n : pt.Neighbours)
             {
                 if (n->Col == None)
@@ -54,13 +59,17 @@ public:
                 else
                 {
                     if (n->Liberties == 1)
+                    {
                         ++liberties;
+                        captureLoc = n->Loc;
+                        capturesWithRepetition += n->GroupSize;
+                    }
                 }
             }
 
-            legal = liberties > 0;
-
-            // TODO: Check for board state repetition.
+            bool suicide = liberties == 0;
+            bool repetition = capturesWithRepetition == 1 && IsKoRepetition(col, loc, captureLoc);
+            legal = !suicide && !repetition;
         }
 
         return legal;
@@ -85,6 +94,11 @@ public:
     void MakeMove(const Move& move)
     {
         assert(IsLegal(move.Col, move.Point));
+
+        auto z = Zobrist<N>::Instance();
+        uint64_t nextHash = _hashes[_turnNumber-1];
+        nextHash ^= z->Key(move.Col, move.Point);
+
         Point& pt = this->_points[move.Point];
         pt.Col = move.Col;
 
@@ -99,7 +113,9 @@ public:
             {
                 if (n->Col != move.Col && n->Liberties == 1)
                 {
-                    FFCapture(n, requireUpdate);
+                    uint64_t groupHash = 0;
+                    FFCapture(n, requireUpdate, groupHash);
+                    nextHash ^= groupHash;
                 }
                 else
                 {
@@ -120,7 +136,14 @@ public:
             }
         }
 
-        this->_colourToMove = this->_colourToMove == Black ? White : Black;
+        // Update the colour to move.
+        if (move.Col == this->_colourToMove)
+        {
+            this->_colourToMove = this->_colourToMove == Black ? White : Black;
+            nextHash ^= z->BlackTurn();
+        }
+
+        _hashes[_turnNumber++] = nextHash;
     }
 
     std::string ToString() const
@@ -143,7 +166,9 @@ public:
 
 private:
     Colour _colourToMove = Black;
-    Point _points[N*N] = {{None, 0}};
+    Point _points[N*N] = {{None, 0, 0}};
+    uint64_t _hashes[2*N*N] = {0};
+    int _turnNumber = 1;
 
     // Initialise the neighbours for each point.
     void InitialiseNeighbours()
@@ -159,6 +184,21 @@ private:
             if (c > 0) _points[i].Neighbours.push_back(&_points[i-1]);
             if (c < N-1) _points[i].Neighbours.push_back(&_points[i+1]);
         }
+    }
+
+    // Check whether the specified move and capture would result in a board repetition.
+    bool IsKoRepetition(Colour col, int loc, int captureLoc) const
+    {
+        Colour enemyCol = col == Black ? White : Black;
+        auto z = Zobrist<N>::Instance();
+        uint64_t nextHash = _hashes[_turnNumber-1] ^ z->Key(col, loc) ^ z->Key(enemyCol, captureLoc);
+
+        // Has this hash occurred previously?
+        bool repeat = false;
+        for (int i = _turnNumber-1; i >= 0 && !repeat; i--)
+            repeat = _hashes[i] == nextHash;
+
+        return repeat;
     }
 
     // Flood fill algorithm which updates the liberties for all stones in the group containing
@@ -186,6 +226,7 @@ private:
             for (Point* const groupPt : group)
             {
                 groupPt->Liberties = liberties;
+                groupPt->GroupSize = group.size();
                 requireUpdate[groupPt->Loc] = false;
             }
         }
@@ -193,17 +234,18 @@ private:
 
     // Flood fill algorithm which removes all stones in the group containing the specified point.
     // Points which are affected by this capture get flagged as requiring an update.
-    void FFCapture(Point* const pt, bool* requireUpdate)
+    void FFCapture(Point* const pt, bool* requireUpdate, uint64_t& groupHash)
     {
         Colour origCol = pt->Col;
         pt->Col = None;
         pt->Liberties = 0;
+        groupHash ^= Zobrist<N>::Instance()->Key(origCol, pt->Loc);
 
         for (Point* const n : pt->Neighbours)
         {
             if (n->Col == origCol)
             {
-                FFCapture(n, requireUpdate);
+                FFCapture(n, requireUpdate, groupHash);
             }
             else if (n->Col != None)
             {
