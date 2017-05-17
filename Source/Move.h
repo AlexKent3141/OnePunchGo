@@ -9,25 +9,31 @@
 struct Move
 {
     Colour Col;
-    int Point;
+    int Coord;
 };
+
+inline int StringToCoord(const std::string& str, int n)
+{
+    int file = std::string("ABCDEFGHJKLMNOPQRSTUVWXYZ").find(str[0]);
+    int rank = stoi(str.substr(1)) - 1;
+    return file + rank*n;
+}
 
 // Get the string representation of the move.
 inline std::string MoveToString(const Move& move, int n)
 {
     assert(move.Col != None);
     std::string s = move.Col == Black ? "B " : "W "; 
-    s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[move.Point % n];
-    s += std::to_string(move.Point / n + 1);
+    s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[move.Coord % n];
+    s += std::to_string(move.Coord / n + 1);
     return s;
 }
 
 inline Move StringToMove(const std::string& str, int n)
 {
     Colour col = str[0] == 'B' ? Black : White;
-    int file = std::string("ABCDEFGHJKLMNOPQRSTUVWXYZ").find(str[2]);
-    int rank = stoi(str.substr(3)) - 1;
-    return {col, file + rank*n};
+    int coord = StringToCoord(str.substr(2), n);
+    return {col, coord};
 }
 
 #endif // __MOVE_H__

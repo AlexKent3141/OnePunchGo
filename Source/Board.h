@@ -15,7 +15,7 @@ struct Point
     Colour Col;
     int GroupSize;
     int Liberties;
-    int Loc;
+    int Coord;
     std::vector<Point*> Neighbours;
 };
 
@@ -34,13 +34,22 @@ public:
     // Get the colour at the specified location.
     inline Colour PointColour(int loc) const { return _points[loc].Col; }
 
+    // Get the latest hash.
+    inline uint64_t CurrentHash() const { return _hashes[_turnNumber-1]; }
+
     // Check the legality of the specified move in this position.
-    bool IsLegal(Colour col, int loc) const
+    Legality CheckLegal(int loc) const
+    {
+        return CheckLegal(this->_colourToMove, loc);
+    }
+
+    // Check the legality of the specified move in this position.
+    Legality CheckLegal(Colour col, int loc) const
     {
         // Check occupancy.
         const Point& pt = this->_points[loc];
-        bool legal = pt.Col == None;
-        if (legal)
+        Legality res = pt.Col == None ? Legal : Occupied;
+        if (res == Legal)
         {
             // Check for suicide and ko.
             int liberties = 0;
@@ -61,7 +70,7 @@ public:
                     if (n->Liberties == 1)
                     {
                         ++liberties;
-                        captureLoc = n->Loc;
+                        captureLoc = n->Coord;
                         capturesWithRepetition += n->GroupSize;
                     }
                 }
@@ -69,10 +78,10 @@ public:
 
             bool suicide = liberties == 0;
             bool repetition = capturesWithRepetition == 1 && IsKoRepetition(col, loc, captureLoc);
-            legal = !suicide && !repetition;
+            res = suicide ? Suicide : repetition ? Ko : Legal;
         }
 
-        return legal;
+        return res;
     }
 
     // Get all moves available for the current colour.
@@ -81,7 +90,7 @@ public:
         std::vector<Move> moves;
         for (int i = 0; i < N*N; i++)
         {
-            if (IsLegal(this->_colourToMove, i))
+            if (CheckLegal(this->_colourToMove, i) == Legal)
             {
                 moves.push_back({this->_colourToMove, i});
             }
@@ -93,18 +102,18 @@ public:
     // Update the board state with the specified move.
     void MakeMove(const Move& move)
     {
-        assert(IsLegal(move.Col, move.Point));
+        assert(CheckLegal(move.Col, move.Coord) == Legal);
 
         auto z = Zobrist<N>::Instance();
         uint64_t nextHash = _hashes[_turnNumber-1];
-        nextHash ^= z->Key(move.Col, move.Point);
+        nextHash ^= z->Key(move.Col, move.Coord);
 
-        Point& pt = this->_points[move.Point];
+        Point& pt = this->_points[move.Coord];
         pt.Col = move.Col;
 
         // Cache which points need updating.
         bool requireUpdate[N*N] = {false};
-        requireUpdate[pt.Loc] = true;
+        requireUpdate[pt.Coord] = true;
 
         // First detect stones which will get captured and remove them.
         for (Point* const n : pt.Neighbours)
@@ -119,7 +128,7 @@ public:
                 }
                 else
                 {
-                    requireUpdate[n->Loc] = true;
+                    requireUpdate[n->Coord] = true;
                 }
             }
         }
@@ -177,7 +186,7 @@ private:
         for (int i = 0; i < N*N; i++)
         {
             r = i / N, c = i % N;
-            _points[i].Loc = i;
+            _points[i].Coord = i;
             _points[i].Neighbours.clear();
             if (r > 0) _points[i].Neighbours.push_back(&_points[i-N]);
             if (r < N-1) _points[i].Neighbours.push_back(&_points[i+N]);
@@ -191,7 +200,11 @@ private:
     {
         Colour enemyCol = col == Black ? White : Black;
         auto z = Zobrist<N>::Instance();
-        uint64_t nextHash = _hashes[_turnNumber-1] ^ z->Key(col, loc) ^ z->Key(enemyCol, captureLoc);
+        uint64_t nextHash =
+            _hashes[_turnNumber-1]
+            ^ z->Key(col, loc)
+            ^ z->Key(enemyCol, captureLoc)
+            ^ z->BlackTurn();
 
         // Has this hash occurred previously?
         bool repeat = false;
@@ -227,7 +240,7 @@ private:
             {
                 groupPt->Liberties = liberties;
                 groupPt->GroupSize = group.size();
-                requireUpdate[groupPt->Loc] = false;
+                requireUpdate[groupPt->Coord] = false;
             }
         }
     }
@@ -239,7 +252,7 @@ private:
         Colour origCol = pt->Col;
         pt->Col = None;
         pt->Liberties = 0;
-        groupHash ^= Zobrist<N>::Instance()->Key(origCol, pt->Loc);
+        groupHash ^= Zobrist<N>::Instance()->Key(origCol, pt->Coord);
 
         for (Point* const n : pt->Neighbours)
         {
@@ -249,7 +262,7 @@ private:
             }
             else if (n->Col != None)
             {
-                requireUpdate[n->Loc] = true;
+                requireUpdate[n->Coord] = true;
             }
         }
     }

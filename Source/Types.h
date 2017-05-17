@@ -8,4 +8,12 @@ enum Colour
     White
 };
 
+enum Legality
+{
+    Legal,
+    Occupied,
+    Suicide,
+    Ko
+};
+
 #endif // __TYPES_H__
