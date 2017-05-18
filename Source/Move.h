@@ -5,6 +5,8 @@
 #include <string>
 #include <cassert>
 
+const int PassCoord = -1;
+
 // The data for a single move.
 struct Move
 {
@@ -24,15 +26,24 @@ inline std::string MoveToString(const Move& move, int n)
 {
     assert(move.Col != None);
     std::string s = move.Col == Black ? "B " : "W "; 
-    s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[move.Coord % n];
-    s += std::to_string(move.Coord / n + 1);
+    if (move.Coord == PassCoord)
+    {
+        s += "pass";
+    }
+    else
+    {
+        s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[move.Coord % n];
+        s += std::to_string(move.Coord / n + 1);
+    }
+
     return s;
 }
 
 inline Move StringToMove(const std::string& str, int n)
 {
     Colour col = str[0] == 'B' ? Black : White;
-    int coord = StringToCoord(str.substr(2), n);
+    std::string coordStr = str.substr(2);
+    int coord = coordStr == "pass" ? PassCoord :  StringToCoord(coordStr, n);
     return {col, coord};
 }
 

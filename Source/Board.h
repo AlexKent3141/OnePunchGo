@@ -37,6 +37,9 @@ public:
     // Get the latest hash.
     inline uint64_t CurrentHash() const { return _hashes[_turnNumber-1]; }
 
+    // Check whether the game has finished (both players passed).
+    inline bool GameOver() const { return _passes[0] && _passes[1]; }
+
     // Check the legality of the specified move in this position.
     Legality CheckLegal(int loc) const
     {
@@ -46,6 +49,10 @@ public:
     // Check the legality of the specified move in this position.
     Legality CheckLegal(Colour col, int loc) const
     {
+        // Passing is always legal.
+        if (loc == PassCoord)
+            return Legal;
+
         // Check occupancy.
         const Point& pt = this->_points[loc];
         Legality res = pt.Col == None ? Legal : Occupied;
@@ -88,12 +95,18 @@ public:
     std::vector<Move> GetMoves() const
     {
         std::vector<Move> moves;
-        for (int i = 0; i < N*N; i++)
+        if (!GameOver())
         {
-            if (CheckLegal(this->_colourToMove, i) == Legal)
+            for (int i = 0; i < N*N; i++)
             {
-                moves.push_back({this->_colourToMove, i});
+                if (CheckLegal(i) == Legal)
+                {
+                    moves.push_back({this->_colourToMove, i});
+                }
             }
+
+            // Passing is always legal.
+            moves.push_back({this->_colourToMove, PassCoord});
         }
 
         return moves;
@@ -102,46 +115,51 @@ public:
     // Update the board state with the specified move.
     void MakeMove(const Move& move)
     {
+        assert(!GameOver());
         assert(CheckLegal(move.Col, move.Coord) == Legal);
 
         auto z = Zobrist<N>::Instance();
         uint64_t nextHash = _hashes[_turnNumber-1];
-        nextHash ^= z->Key(move.Col, move.Coord);
 
-        Point& pt = this->_points[move.Coord];
-        pt.Col = move.Col;
-
-        // Cache which points need updating.
-        bool requireUpdate[N*N] = {false};
-        requireUpdate[pt.Coord] = true;
-
-        // First detect stones which will get captured and remove them.
-        for (Point* const n : pt.Neighbours)
+        if (move.Coord != PassCoord)
         {
-            if (n->Col != None)
+            nextHash ^= z->Key(move.Col, move.Coord);
+
+            Point& pt = this->_points[move.Coord];
+            pt.Col = move.Col;
+
+            // Cache which points need updating.
+            bool requireUpdate[N*N] = {false};
+            requireUpdate[pt.Coord] = true;
+
+            // First detect stones which will get captured and remove them.
+            for (Point* const n : pt.Neighbours)
             {
-                if (n->Col != move.Col && n->Liberties == 1)
+                if (n->Col != None)
                 {
-                    uint64_t groupHash = 0;
-                    FFCapture(n, requireUpdate, groupHash);
-                    nextHash ^= groupHash;
-                }
-                else
-                {
-                    requireUpdate[n->Coord] = true;
+                    if (n->Col != move.Col && n->Liberties == 1)
+                    {
+                        uint64_t groupHash = 0;
+                        FFCapture(n, requireUpdate, groupHash);
+                        nextHash ^= groupHash;
+                    }
+                    else
+                    {
+                        requireUpdate[n->Coord] = true;
+                    }
                 }
             }
-        }
 
-        // Update the liberties of the affected stones.
-        for (int i = 0; i < N*N; i++)
-        {
-            if (requireUpdate[i])
+            // Update the liberties of the affected stones.
+            for (int i = 0; i < N*N; i++)
             {
-                int liberties = 0;
-                std::vector<Point*> group;
-                std::vector<Point*> considered;
-                FFLiberties(&_points[i], requireUpdate, liberties, group, considered);
+                if (requireUpdate[i])
+                {
+                    int liberties = 0;
+                    std::vector<Point*> group;
+                    std::vector<Point*> considered;
+                    FFLiberties(&_points[i], requireUpdate, liberties, group, considered);
+                }
             }
         }
 
@@ -153,6 +171,7 @@ public:
         }
 
         _hashes[_turnNumber++] = nextHash;
+        _passes[(int)move.Col-1] = move.Coord == PassCoord;
     }
 
     std::string ToString() const
@@ -178,6 +197,7 @@ private:
     Point _points[N*N] = {{None, 0, 0}};
     uint64_t _hashes[2*N*N] = {0};
     int _turnNumber = 1;
+    bool _passes[2] = {false};
 
     // Initialise the neighbours for each point.
     void InitialiseNeighbours()
