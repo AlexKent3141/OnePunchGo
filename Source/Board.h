@@ -5,6 +5,7 @@
 #include "Types.h"
 #include "Zobrist.h"
 #include <cassert>
+#include <cstring>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -39,6 +40,24 @@ public:
 
     // Check whether the game has finished (both players passed).
     inline bool GameOver() const { return _passes[0] && _passes[1]; }
+
+    // Clone fields from other.
+    void CloneFrom(const Board<N>& other)
+    {
+        _colourToMove = other._colourToMove;
+        _turnNumber = other._turnNumber;
+        memcpy(_hashes, other._hashes, 2*N*N*sizeof(uint64_t));
+        memcpy(_passes, other._passes, 2*sizeof(bool));
+
+        for (int i = 0; i < N*N; i++)
+        {
+            Point& pt = _points[i];
+            const Point& opt = other._points[i];
+            pt.Col = opt.Col;
+            pt.GroupSize = opt.GroupSize;
+            pt.Liberties = opt.Liberties;
+        }
+    }
 
     // Check the legality of the specified move in this position.
     Legality CheckLegal(int loc) const
@@ -172,6 +191,32 @@ public:
 
         _hashes[_turnNumber++] = nextHash;
         _passes[(int)move.Col-1] = move.Coord == PassCoord;
+    }
+
+    // Compute the score of the current position.
+    // Area scoring is used and we assume that all empty points are fully surrounded by one
+    // colour.
+    // The score is determined from black's perspective (positive score indicates black win).
+    int Score() const
+    {
+        const double Komi = 7.5; // TODO: Make this configurable.
+        double score = -Komi;
+        for (int i = 0; i < N*N; i++)
+        {
+            const Point& pt = _points[i];
+            if (pt.Col == None)
+            {
+                score += pt.Col == Black ? 1 : -1;
+            }
+            else
+            {
+                // Look at a neighbour.
+                Point const* const n = pt.Neighbours[0];
+                score += n->Col == Black ? 1 : -1;
+            }
+        }
+
+        return score > 0 ? 1 : score < 0 ? -1 : 0;
     }
 
     std::string ToString() const

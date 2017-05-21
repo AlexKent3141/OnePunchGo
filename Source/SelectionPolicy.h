@@ -8,7 +8,11 @@
 class SelectionPolicy
 {
 public:
-    virtual Node* Select(const std::vector<Node*>&) const = 0;
+    virtual Node* Select(const std::vector<Node*>& children) const
+    {
+        return children[0];
+    }
+
     virtual ~SelectionPolicy() {}
 };
 

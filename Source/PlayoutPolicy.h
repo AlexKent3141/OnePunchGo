@@ -9,7 +9,11 @@
 class PlayoutPolicy
 {
 public:
-    virtual Move Select(const std::vector<Move>&) const = 0;
+    virtual Move Select(const std::vector<Move>& moves) const
+    {
+        return moves[0];
+    }
+
     virtual ~PlayoutPolicy() {}
 };
 
