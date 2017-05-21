@@ -1,7 +1,7 @@
 #ifndef __SELECTION_POLICY_H__
 #define __SELECTION_POLICY_H__
 
-#include "Node.h"
+#include "../Node.h"
 #include <vector>
 
 // A selection policy defines a method which attempts to select the most promising child node.

@@ -2,13 +2,20 @@
 #define __RANDOM_GENERATOR_H__
 
 #include <cassert>
+#include <chrono>
 
 // Pseudo-random number generator which uses the xorshift* algorithm.
 // Only requires 8 bytes of storage and is extremely fast.
 class RandomGenerator
 {
 public:
-    // Seed the generator.
+    // Seed using the current time.
+    RandomGenerator()
+    {
+        _s = std::chrono::system_clock::now().time_since_epoch().count();
+    }
+
+    // Seed the generator explicitly.
     RandomGenerator(uint64_t seed) : _s(seed) 
     {
         assert(_s != 0);

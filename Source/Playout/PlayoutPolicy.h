@@ -1,7 +1,7 @@
 #ifndef __PLAYOUT_POLICY_H__
 #define __PLAYOUT_POLICY_H__
 
-#include "Move.h"
+#include "../Move.h"
 #include <vector>
 
 // A playout policy defines a method which attempts to select the most promising move during
@@ -9,7 +9,7 @@
 class PlayoutPolicy
 {
 public:
-    virtual Move Select(const std::vector<Move>& moves) const
+    virtual Move Select(const std::vector<Move>& moves)
     {
         return moves[0];
     }

@@ -3,8 +3,8 @@
 
 #include "Board.h"
 #include "Node.h"
-#include "PlayoutPolicy.h"
-#include "SelectionPolicy.h"
+#include "Playout/PlayoutPolicy.h"
+#include "Selection/SelectionPolicy.h"
 
 // This class performs executes the MCTS algorithm to find the best move.
 // The template parameters are:
@@ -74,7 +74,7 @@ private:
 
     // Select a node to expand.
     template<unsigned int N>
-    Node* Select(Board<N>& temp, Node* root) const
+    Node* Select(Board<N>& temp, Node* root)
     {
         Node* current = root;
         while (current->FullyExpanded() && current->HasChildren())
@@ -103,7 +103,7 @@ private:
 
     // Perform a simulation from the specified game state.
     template<unsigned int N>
-    int Simulate(Board<N>& temp) const
+    int Simulate(Board<N>& temp)
     {
         // Make moves according to the playout policy until a terminal state is reached.
         std::vector<Move> moves = temp.GetMoves(false);
