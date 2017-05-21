@@ -46,7 +46,7 @@ public:
     {
         _colourToMove = other._colourToMove;
         _turnNumber = other._turnNumber;
-        memcpy(_hashes, other._hashes, 2*N*N*sizeof(uint64_t));
+        memcpy(_hashes, other._hashes, 3*N*N*sizeof(uint64_t));
         memcpy(_passes, other._passes, 2*sizeof(bool));
 
         for (int i = 0; i < N*N; i++)
@@ -110,8 +110,22 @@ public:
         return res;
     }
 
+    // Check whether the specified move will fill an eye.
+    // This is currently more of a pseudo-eye check as it does not look at the diagonals.
+    bool FillsEye(Colour col, int loc) const
+    {
+        int friendlyNeighbours = 0;
+        const Point& pt = this->_points[loc];
+        for (const Point* const n : pt.Neighbours)
+        {
+            friendlyNeighbours += n->Col == col && n->Liberties > 1 ? 1 : 0;
+        }
+
+        return friendlyNeighbours == pt.Neighbours.size();
+    }
+
     // Get all moves available for the current colour.
-    std::vector<Move> GetMoves() const
+    std::vector<Move> GetMoves(bool allowFillOwnEye = true) const
     {
         std::vector<Move> moves;
         if (!GameOver())
@@ -120,7 +134,10 @@ public:
             {
                 if (CheckLegal(i) == Legal)
                 {
-                    moves.push_back({this->_colourToMove, i});
+                    if (allowFillOwnEye || !FillsEye(this->_colourToMove, i))
+                    {
+                        moves.push_back({this->_colourToMove, i});
+                    }
                 }
             }
 
@@ -240,7 +257,7 @@ public:
 private:
     Colour _colourToMove = Black;
     Point _points[N*N] = {{None, 0, 0}};
-    uint64_t _hashes[2*N*N] = {0};
+    uint64_t _hashes[3*N*N] = {0};
     int _turnNumber = 1;
     bool _passes[2] = {false};
 

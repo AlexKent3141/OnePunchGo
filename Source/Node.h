@@ -4,12 +4,25 @@
 #include "Move.h"
 #include <cassert>
 
-// A node in the dynamically generated MCTS tree.
-struct Node
+// The statistics for the move.
+struct MoveStats
 {
     Move LastMove;
     int Visits;
     int Wins;
+
+    // Update with the new score.
+    void UpdateScore(int score)
+    {
+        ++Visits;
+        Wins += LastMove.Col == Black ? score : -score;
+    }
+};
+
+// A node in the dynamically generated MCTS tree.
+struct Node
+{
+    MoveStats Stats;
     int Unexpanded;
     Node* Parent;
     std::vector<Move> Moves; // The moves that are available.
@@ -39,20 +52,23 @@ struct Node
     Node* ExpandNext()
     {
         assert(!FullyExpanded());
-        const Move& move = Moves[Unexpanded++];
         Node* next = new Node;
-        next->LastMove = move;
+        next->Stats = { Moves[Unexpanded++], 0, 0 };
+        next->Unexpanded = 0;
         next->Parent = this;
         Children.push_back(next);
         return next;
     }
-
-    // Update the stats for this node with the new score.
-    void UpdateScore(int score)
-    {
-        ++Visits;
-        Wins += LastMove.Col == Black ? score : -score;
-    }
 };
+
+// Make the root node for the tree.
+inline Node* MakeRoot()
+{
+    Node* root = new Node;
+    root->Stats = { {}, 0, 0 };
+    root->Unexpanded = 0;
+    root->Parent = nullptr;
+    return root;
+}
 
 #endif // __NODE_H__

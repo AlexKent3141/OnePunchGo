@@ -16,11 +16,15 @@ class Search
 static_assert(std::is_base_of<SelectionPolicy, SP>::value, "Not a valid selection policy.");
 static_assert(std::is_base_of<PlayoutPolicy, PP>::value, "Not a valid playout policy.");
 public:
+    inline MoveStats Best() const { return _best; }
+
     // This method keeps searching until a call to Stop is made.
     template<unsigned int N>
     void Start(const Board<N>& pos)
     {
-        Node* root = new Node;
+        Node* root = MakeRoot();
+        root->Moves = pos.GetMoves();
+
         Board<N> temp;
         _stop = false;
         while (!_stop)
@@ -41,6 +45,18 @@ public:
             UpdateScores(leaf, res);
         }
 
+        // Find the most promising move.
+        int highestVisits = -1;
+        for (size_t i = 0; i < root->Children.size(); i++)
+        {
+            Node const* const child = root->Children[i];
+            if (child->Stats.Visits > highestVisits)
+            {
+                highestVisits = child->Stats.Visits;
+                _best = child->Stats;
+            }
+        }
+
         delete root;
     }
 
@@ -54,6 +70,7 @@ private:
     bool _stop = false;
     SP _sp;
     PP _pp;
+    MoveStats _best;
 
     // Select a node to expand.
     template<unsigned int N>
@@ -63,7 +80,7 @@ private:
         while (current->FullyExpanded() && current->HasChildren())
         {
             current = _sp.Select(current->Children);
-            temp.MakeMove(current->LastMove);
+            temp.MakeMove(current->Stats.LastMove);
         }
 
         return current;
@@ -77,7 +94,8 @@ private:
         if (!expanded->FullyExpanded())
         {
             expanded = expanded->ExpandNext();
-            temp.MakeMove(expanded->LastMove);
+            temp.MakeMove(expanded->Stats.LastMove);
+            expanded->Moves = temp.GetMoves();
         }
 
         return expanded;
@@ -88,12 +106,12 @@ private:
     int Simulate(Board<N>& temp) const
     {
         // Make moves according to the playout policy until a terminal state is reached.
-        std::vector<Move> moves = temp.GetMoves();
+        std::vector<Move> moves = temp.GetMoves(false);
         while (moves.size() > 0)
         {
             Move move = _pp.Select(moves);
             temp.MakeMove(move);
-            moves = temp.GetMoves();
+            moves = temp.GetMoves(false);
         }
 
         return temp.Score();
@@ -104,7 +122,7 @@ private:
     {
         while (leaf != nullptr)
         {
-            leaf->UpdateScore(score);
+            leaf->Stats.UpdateScore(score);
             leaf = leaf->Parent;
         }
     }
