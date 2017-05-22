@@ -106,12 +106,12 @@ private:
     int Simulate(Board<N>& temp)
     {
         // Make moves according to the playout policy until a terminal state is reached.
-        std::vector<Move> moves = temp.GetMoves(false);
+        std::vector<Move> moves = temp.GetMoves(true);
         while (moves.size() > 0)
         {
             Move move = _pp.Select(moves);
             temp.MakeMove(move);
-            moves = temp.GetMoves(false);
+            moves = temp.GetMoves(true);
         }
 
         return temp.Score();

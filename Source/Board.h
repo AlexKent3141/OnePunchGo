@@ -29,7 +29,7 @@ public:
     Board()
     {
         this->InitialiseNeighbours();
-        _hashes[0] = Zobrist<N>::Instance()->BlackTurn();
+        _hashes.push_back(Zobrist<N>::Instance()->BlackTurn());
     }
 
     // Get the colour at the specified location.
@@ -46,7 +46,7 @@ public:
     {
         _colourToMove = other._colourToMove;
         _turnNumber = other._turnNumber;
-        memcpy(_hashes, other._hashes, 3*N*N*sizeof(uint64_t));
+        _hashes = other._hashes;
         memcpy(_passes, other._passes, 2*sizeof(bool));
 
         for (int i = 0; i < N*N; i++)
@@ -125,7 +125,7 @@ public:
     }
 
     // Get all moves available for the current colour.
-    std::vector<Move> GetMoves(bool allowFillOwnEye = true) const
+    std::vector<Move> GetMoves(bool duringPlayout = false) const
     {
         std::vector<Move> moves;
         if (!GameOver())
@@ -134,15 +134,19 @@ public:
             {
                 if (CheckLegal(i) == Legal)
                 {
-                    if (allowFillOwnEye || !FillsEye(this->_colourToMove, i))
+                    if (!duringPlayout || !FillsEye(this->_colourToMove, i))
                     {
                         moves.push_back({this->_colourToMove, i});
                     }
                 }
             }
 
-            // Passing is always legal.
-            moves.push_back({this->_colourToMove, PassCoord});
+            // Passing is always legal but don't consider it during a playout unless there
+            // are no other moves available.
+            if (!duringPlayout || moves.size() == 0)
+            {
+                moves.push_back({this->_colourToMove, PassCoord});
+            }
         }
 
         return moves;
@@ -206,8 +210,9 @@ public:
             nextHash ^= z->BlackTurn();
         }
 
-        _hashes[_turnNumber++] = nextHash;
+        _hashes.push_back(nextHash);
         _passes[(int)move.Col-1] = move.Coord == PassCoord;
+        ++_turnNumber;
     }
 
     // Compute the score of the current position.
@@ -257,7 +262,7 @@ public:
 private:
     Colour _colourToMove = Black;
     Point _points[N*N] = {{None, 0, 0}};
-    uint64_t _hashes[3*N*N] = {0};
+    std::vector<uint64_t> _hashes;
     int _turnNumber = 1;
     bool _passes[2] = {false};
 
