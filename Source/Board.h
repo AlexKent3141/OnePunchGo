@@ -2,6 +2,7 @@
 #define __BOARD_H__
 
 #include "Move.h"
+#include "Rules.h"
 #include "Types.h"
 #include "Zobrist.h"
 #include <cassert>
@@ -29,7 +30,7 @@ public:
     Board()
     {
         this->InitialiseNeighbours();
-        _hashes.push_back(Zobrist<N>::Instance()->BlackTurn());
+        _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist<N>::Instance()->BlackTurn() : 0);
     }
 
     // Get the colour at the specified location.
@@ -207,7 +208,7 @@ public:
         if (move.Col == this->_colourToMove)
         {
             this->_colourToMove = this->_colourToMove == Black ? White : Black;
-            nextHash ^= z->BlackTurn();
+            nextHash ^= CurrentRules.Ko == Situational ? z->BlackTurn() : 0;
         }
 
         _hashes.push_back(nextHash);
@@ -221,8 +222,7 @@ public:
     // The score is determined from black's perspective (positive score indicates black win).
     int Score() const
     {
-        const double Komi = 7.5; // TODO: Make this configurable.
-        double score = -Komi;
+        double score = -CurrentRules.Komi;
         for (int i = 0; i < N*N; i++)
         {
             const Point& pt = _points[i];
@@ -291,7 +291,7 @@ private:
             _hashes[_turnNumber-1]
             ^ z->Key(col, loc)
             ^ z->Key(enemyCol, captureLoc)
-            ^ z->BlackTurn();
+            ^ (CurrentRules.Ko == Situational ? z->BlackTurn() : 0);
 
         // Has this hash occurred previously?
         bool repeat = false;
