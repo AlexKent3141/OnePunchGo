@@ -2,11 +2,12 @@
 # Each test consists of an initial position containing a tsumego. Black must play and kill all white
 # stones (this is forced by using a very large komi).
 # A test passes if the AI can find the solution in 5 seconds.
+# Some of the problems have extra empty space to make them harder.
 
 Begin: Bent three in the corner.
 Position:
-BBBBBBB.B
-BBBBBBBB.
+..BBBBB.B
+..BBBBBB.
 BBBBBBBBB
 BBBBBBBBB
 BBBBBBBBB
@@ -16,4 +17,64 @@ BBBBBBWW.
 BBBBBBW..
 Solution:
 B J1
+End
+
+Begin: Bulky five on the side.
+Position:
+BBBBBBB.B
+BBBBBBBB.
+BBBBBBBBB
+WWBBBBBBB
+.WWBBBBBB
+..WBBBBBB
+..WBBBBBB
+WWWBBBB..
+BBBBBBB..
+Solution:
+B A4
+End
+
+Begin: Bend four in the corner with no ko threats.
+Position:
+..WBBBB.B
+.WWBBBBB.
+.WBBBBBBB
+WWBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBB..
+BBBBBBB..
+Solution:
+B A8
+End
+
+Begin: Four in a row with one stone.
+Position:
+..BBBBB.B
+..BBBBBB.
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBWWWWW
+BBBBW..B.
+Solution:
+B G1
+End
+
+Begin: Rabbity six.
+Position:
+..BBBBB.B
+..BBBBBB.
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBWWW
+BBBBBWW.W
+BBBBBW...
+BBBBBWW..
+Solution:
+B H2
 End
