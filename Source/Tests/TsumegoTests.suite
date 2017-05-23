@@ -78,3 +78,33 @@ BBBBBWW..
 Solution:
 B H2
 End
+
+Begin: Symmetry point 1.
+Position:
+..BBBBB.B
+..BBBBBB.
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBWWWBBB
+BBWW.WWBB
+.........
+Solution:
+B E1
+End
+
+Begin: Symmetry point 2.
+Position:
+BBBBBBB.B
+BBBBBBBB.
+BBBBBBBBB
+BBBBBBBBB
+BBB.W.BBB
+BB.W.W.BB
+BBBWWWBBB
+BBW.W.WBB
+BBW...WBB
+Solution:
+B E1
+End
