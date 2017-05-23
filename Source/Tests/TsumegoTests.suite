@@ -1,0 +1,19 @@
+# Simple tsumego which the AI should be able to solve.
+# Each test consists of an initial position containing a tsumego. Black must play and kill all white
+# stones (this is forced by using a very large komi).
+# A test passes if the AI can find the solution in 5 seconds.
+
+Begin: Bent three in the corner.
+Position:
+BBBBBBB.B
+BBBBBBBB.
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBBB
+BBBBBBBWW
+BBBBBBWW.
+BBBBBBW..
+Solution:
+B J1
+End

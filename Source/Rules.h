@@ -16,7 +16,7 @@ struct Rules
 };
 
 // The AGA ruleset (used in the UK).
-Rules AGA = { 7.5, Situational };
+const Rules AGA = { 7.5, Situational };
 
 Rules CurrentRules = AGA;
 

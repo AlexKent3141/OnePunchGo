@@ -33,6 +33,31 @@ public:
         _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist<N>::Instance()->BlackTurn() : 0);
     }
 
+    Board(Colour colourToMove, const std::vector<std::string>& s)
+    {
+        assert(s.size() == N);
+        assert(s[0].size() == N);
+
+        this->InitialiseNeighbours();
+        _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist<N>::Instance()->BlackTurn() : 0);
+
+        int loc;
+        char c;
+        for (size_t i = 0; i < N; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {
+                loc = (N-i-1)*N + j;
+                c = s[i][j];
+                Colour col = c == 'B' ? Black : c == 'W' ? White : None;
+                if (col != None)
+                    MakeMove({ col, loc });
+            }
+        }
+
+        _colourToMove = colourToMove;
+    }
+
     // Get the colour at the specified location.
     inline Colour PointColour(int loc) const { return _points[loc].Col; }
 
@@ -228,13 +253,13 @@ public:
             const Point& pt = _points[i];
             if (pt.Col == None)
             {
-                score += pt.Col == Black ? 1 : -1;
-            }
-            else
-            {
                 // Look at a neighbour.
                 Point const* const n = pt.Neighbours[0];
                 score += n->Col == Black ? 1 : -1;
+            }
+            else
+            {
+                score += pt.Col == Black ? 1 : -1;
             }
         }
 
