@@ -1,0 +1,237 @@
+#include "Board.h"
+#include "CommsHandler.h"
+#include "Move.h"
+#include "Rules.h"
+#include "Search.h"
+#include "Utils.h"
+#include "Selection/UCB1.h"
+#include "Playout/Uniform.h"
+#include <cctype>
+#include <algorithm>
+#include <chrono>
+#include <iostream>
+#include <thread>
+
+bool CommsHandler::Process(const std::string& message)
+{
+    bool alive = true;
+
+    std::string cmd = PreProcess(message);
+    auto tokens = Utils::GetInstance()->Split(cmd, ' ');
+    if (tokens.size() > 0)
+    {
+        int i = 0;
+
+        // Is the first token an integer (id)?
+        int id = NoID;
+        if (IsInteger(tokens[i]))
+        {
+            id = stoi(tokens[i++]);
+        }
+
+        // Check the type of command.
+        std::string command = tokens[i++];
+        if (command == "protocol_version")
+        {
+            SuccessResponse(id, "2.0");
+        }
+        else if (command == "name")
+        {
+            SuccessResponse(id, "OnePunchGo");
+        }
+        else if (command == "version")
+        {
+            SuccessResponse(id, "1.0");
+        }
+        else if (command == "known_command")
+        {
+            std::string cmd = tokens[i++];
+            auto it = std::find(_knownCommands.begin(), _knownCommands.end(), cmd);
+            bool known = it != _knownCommands.end();
+            SuccessResponse(id, known ? "true" : "false");
+        }
+        else if (command == "list_commands")
+        {
+            std::string knownCommands = "";
+            for (size_t i = 0; i < _knownCommands.size(); i++)
+                knownCommands += _knownCommands[i] + " ";
+            
+            SuccessResponse(id, knownCommands);
+        }
+        else if (command == "quit")
+        {
+            alive = false;
+        }
+        else if (command == "boardsize")
+        {
+            int size = stoi(tokens[i++]);
+            if (size > 0 && size < 26)
+            {
+                _boardSize = size;
+                _history.Clear();
+            }
+            else
+            {
+                FailureResponse(id, "unacceptable size");
+            }
+        }
+        else if (command == "clear_board")
+        {
+            _history.Clear();
+        }
+        else if (command == "komi")
+        {
+            CurrentRules.Komi = stof(tokens[i++]);
+        }
+        else if (command == "play")
+        {
+            // A move was specified.
+            std::string move = tokens[i] + " " + tokens[i+1];
+            _history.AddMove(StringToMove(move, _boardSize));
+        }
+        else if (command == "genmove")
+        {
+            // Construct the current board state.
+            std::string colString = ToLower(tokens[i]);
+            Colour col = colString == "black" || colString == "b" ? Black : White;
+            Board board(_boardSize, col, _history);
+
+            // Search for a fixed amount of time.
+            Search<UCB1, Uniform> search;
+            std::thread worker([&] { search.Start(board); });
+
+            std::chrono::seconds searchTime(5);
+            std::this_thread::sleep_for(searchTime);
+            search.Stop();
+
+            // Wait a little longer to ensure that the search has completed.
+            std::chrono::seconds delay(1);
+            std::this_thread::sleep_for(delay);
+
+            const MoveStats& best = search.Best();
+            const Move& move = best.LastMove;
+            SuccessResponse(id, CoordToString(move.Coord, _boardSize));
+        }
+        else if (command == "undo")
+        {
+            _history.UndoLast();
+        }
+        else
+        {
+            FailureResponse(id, "unknown command");
+        }
+    }
+
+    return alive;
+}
+
+std::string CommsHandler::PreProcess(const std::string& command) const
+{
+    std::string processedCommand = "";
+
+    // Cannot be whitespace only.
+    if (command.size() == 0 || IsWhitespaceLine(command))
+        return processedCommand;
+
+    // Check the individual characters.
+    char current;
+    for (size_t i = 0; i < command.size(); i++)
+    {
+        current = command[i];
+
+        // If a hash is found then ignore the rest (it's commented).
+        // Line feed also indicates that the command has finished.
+        if (IsHash(current) || IsLF(current))
+            break;
+
+        // Don't allow many control characters.
+        if (IsControl(current))
+        {
+            // Convert horizontal tabs to spaces.
+            if (IsHT(current))
+            {
+                processedCommand += ' ';
+            }
+        }
+        else
+        {
+            // Pass through normal characters.
+            processedCommand += current;
+        }
+    }
+
+    return processedCommand;
+}
+
+bool CommsHandler::IsWhitespaceLine(const std::string& line) const
+{
+    bool res = true;
+    for (size_t i = 0; i < line.size(); i++)
+        res &= IsWhitespace(line[i]);
+
+    return res;
+}
+
+bool CommsHandler::IsWhitespace(char c) const
+{
+    return c == ' '  || c == '\t' || c == '\r' ||
+           c == '\n' || c == '\v' || c == '\f';
+}
+
+bool CommsHandler::IsControl(char c) const
+{
+    return c < 32;
+}
+
+bool CommsHandler::IsHT(char c) const
+{
+    return c == 9;
+}
+
+bool CommsHandler::IsLF(char c) const
+{
+    return c == 10;
+}
+
+bool CommsHandler::IsHash(char c) const
+{
+    return c == 35;
+}
+
+bool CommsHandler::IsInteger(const std::string& s) const
+{
+    bool res = true;
+    for (size_t i = 0; i < s.size(); i++)
+        res &= isdigit(s[i]);
+
+    return res;
+}
+
+std::string CommsHandler::ToLower(const std::string& s) const
+{
+    std::string lower;
+    for (size_t i = 0; i < s.size(); i++)
+        lower += tolower(s[i]);
+
+    return lower;
+}
+
+void CommsHandler::SuccessResponse(int id, const std::string& data) const
+{
+    Response("=", id, data);
+}
+
+void CommsHandler::FailureResponse(int id, const std::string& data) const
+{
+    Response("?", id, data);
+}
+
+void CommsHandler::Response(const std::string& prefix, int id, const std::string& data) const
+{
+    std::string res = prefix
+        + (id != NoID ? std::to_string(id) : "")
+        + (data.size() > 0 ? " " + data : "")
+        + "\n\n";
+
+    std::cout << res;
+}

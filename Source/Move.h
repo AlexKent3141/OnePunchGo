@@ -21,21 +21,28 @@ inline int StringToCoord(const std::string& str, int n)
     return file + rank*n;
 }
 
-// Get the string representation of the move.
-inline std::string MoveToString(const Move& move, int n)
+inline std::string CoordToString(int coord, int n)
 {
-    assert(move.Col != None);
-    std::string s = move.Col == Black ? "B " : "W "; 
-    if (move.Coord == PassCoord)
+    std::string s;
+    if (coord == PassCoord)
     {
         s += "pass";
     }
     else
     {
-        s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[move.Coord % n];
-        s += std::to_string(move.Coord / n + 1);
+        s += "ABCDEFGHJKLMNOPQRSTUVWXYZ"[coord % n];
+        s += std::to_string(coord / n + 1);
     }
 
+    return s;
+}
+
+// Get the string representation of the move.
+inline std::string MoveToString(const Move& move, int n)
+{
+    assert(move.Col != None);
+    std::string s = move.Col == Black ? "B " : "W "; 
+    s += CoordToString(move.Coord, n);
     return s;
 }
 
