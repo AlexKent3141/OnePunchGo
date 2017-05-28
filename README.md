@@ -1,14 +1,15 @@
 # OnePunchGo (OPG)
 Go AI program which is inspired by the protagonist from the "One Punch Man" anime.
 
-## Plan
-This program is at an early stage of development. The rough roadmap is:
+OPG is now in a working state but plays at a very weak level. The key improvements to make next are:
+1) Make the obvious optimisations to the playout and moving-making procedures.
+2) Embed some Go-specific knowledge in the search routine so that there is a bias towards clearly good moves.
+3) Implement well known improvements to the MCTS algorithm such AMAF/RAVE.
 
-### Phase 1
-<b>Board representation + tests.</b> Creating a correct and efficient board representation is a non-trivial problem for Go. This phase is primarily concerned with correctness.
+## Testing OPG
+I have implemented a few types of unit tests for OPG; these can be executed by running with the *test* argument. The most exhaustive ones are the Tsumego solving tests which perform 5 second searches on positions where there is only one solution.
 
-### Phase 2
-<b>Implement Monte-Carlo Tree Search.</b> MCTS is the most effective known tree-searching algorithm for Go: it copes well with the high branching factor and lack of a good heuristic function.
+## Playing against OPG
+OPG is GTP compliant and can therefore be used with existing UI programs which support that protocol. I have been using [GoGui](https://sourceforge.net/projects/gogui/) for my testing.
 
-### Phase 3
-<b>GTP (Go Text Protocol) compliance.</b> GTP is the standard protocol for communicating with Go engines. Once this phase is complete it will be possible to test OPG against itself and other engines to check performance.
+At the moment OPG could give a beginner level player a decent game of 9x9 Go. It's moves on larger board sizes tend to be fairly random!
