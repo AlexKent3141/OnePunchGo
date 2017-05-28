@@ -23,7 +23,7 @@ struct MoveStats
 struct Node
 {
     MoveStats Stats;
-    int Unexpanded;
+    size_t Unexpanded;
     Node* Parent;
     std::vector<Move> Moves; // The moves that are available.
     std::vector<Node*> Children; // The child nodes.

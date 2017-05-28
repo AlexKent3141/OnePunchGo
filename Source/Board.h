@@ -43,7 +43,7 @@ public:
 
         int loc;
         char c;
-        for (size_t i = 0; i < _boardSize; i++)
+        for (int i = 0; i < _boardSize; i++)
         {
             for (int j = 0; j < _boardSize; j++)
             {
@@ -166,7 +166,7 @@ public:
     // This is currently more of a pseudo-eye check as it does not look at the diagonals.
     bool FillsEye(Colour col, int loc) const
     {
-        int friendlyNeighbours = 0;
+        size_t friendlyNeighbours = 0;
         const Point& pt = this->_points[loc];
         for (const Point* const n : pt.Neighbours)
         {
