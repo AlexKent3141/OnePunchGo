@@ -2,6 +2,7 @@
 #define __TSUMEGO_TEST_H__
 
 #include "TestBase.h"
+#include "../Board.h"
 #include "../Move.h"
 #include "../Node.h"
 #include "../Playout/Uniform.h"
@@ -52,19 +53,20 @@ public:
     }
 
 private:
-    static const int N = 9;
+    // All test cases are 9x9.
+    const int N = 9;
 
     // Attempt to solve the tsumego.
     // It is always black to move.
     bool RunTest(const std::vector<std::string>& lines, const Move& solution) const
     {
-        Board<N> board(Black, lines);
+        Board board(Black, lines);
         std::cout << board.ToString() << std::endl;
         CurrentRules.Komi = N*N - 1; // Black must kill everything to win.
 
         // Spawn a searching thread for this position.
         Search<UCB1, Uniform> search;
-        std::thread searchThread([&] { search.Start<N>(board); });
+        std::thread searchThread([&] { search.Start(board); });
         searchThread.detach();
 
         // Allow the search to continue for 5 seconds.

@@ -1,7 +1,9 @@
 #ifndef __BOARD_H__
 #define __BOARD_H__
 
+#include "Globals.h"
 #include "Move.h"
+#include "MoveHistory.h"
 #include "Rules.h"
 #include "Types.h"
 #include "Zobrist.h"
@@ -22,32 +24,30 @@ struct Point
 };
 
 // The board object which can be incrementally updated.
-template<unsigned int N>
 class Board
 {
-static_assert(N < 26, "Board is too large to represent");
 public:
-    Board()
+    Board() = delete;
+
+    Board(int boardSize)
     {
-        this->InitialiseNeighbours();
-        _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist<N>::Instance()->BlackTurn() : 0);
+        InitialiseEmpty(boardSize);
     }
 
     Board(Colour colourToMove, const std::vector<std::string>& s)
     {
-        assert(s.size() == N);
-        assert(s[0].size() == N);
+        InitialiseEmpty(s.size());
 
-        this->InitialiseNeighbours();
-        _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist<N>::Instance()->BlackTurn() : 0);
+        // Ensure that it's square.
+        assert(s.size() == s[0].size());
 
         int loc;
         char c;
-        for (size_t i = 0; i < N; i++)
+        for (size_t i = 0; i < _boardSize; i++)
         {
-            for (int j = 0; j < N; j++)
+            for (int j = 0; j < _boardSize; j++)
             {
-                loc = (N-i-1)*N + j;
+                loc = (_boardSize-i-1)*_boardSize + j;
                 c = s[i][j];
                 Colour col = c == 'B' ? Black : c == 'W' ? White : None;
                 if (col != None)
@@ -57,6 +57,30 @@ public:
 
         _colourToMove = colourToMove;
     }
+
+    Board(Colour colourToMove, int boardSize, const MoveHistory& history)
+    {
+        assert(boardSize > 0 && boardSize < MaxBoardSize);
+
+        InitialiseEmpty(boardSize);
+
+        auto moves = history.Moves();
+        for (Move move : moves)
+            MakeMove(move);
+
+        _colourToMove = colourToMove;
+    }
+
+    ~Board()
+    {
+        if (_points != nullptr)
+        {
+            delete[] _points;
+            _points = nullptr;
+        }
+    }
+
+    inline int BoardSize() const { return _boardSize; }
 
     // Get the colour at the specified location.
     inline Colour PointColour(int loc) const { return _points[loc].Col; }
@@ -68,14 +92,16 @@ public:
     inline bool GameOver() const { return _passes[0] && _passes[1]; }
 
     // Clone fields from other.
-    void CloneFrom(const Board<N>& other)
+    void CloneFrom(const Board& other)
     {
+        assert(_boardSize == other._boardSize);
+
         _colourToMove = other._colourToMove;
         _turnNumber = other._turnNumber;
         _hashes = other._hashes;
         memcpy(_passes, other._passes, 2*sizeof(bool));
 
-        for (int i = 0; i < N*N; i++)
+        for (int i = 0; i < _boardArea; i++)
         {
             Point& pt = _points[i];
             const Point& opt = other._points[i];
@@ -156,7 +182,7 @@ public:
         std::vector<Move> moves;
         if (!GameOver())
         {
-            for (int i = 0; i < N*N; i++)
+            for (int i = 0; i < _boardArea; i++)
             {
                 if (CheckLegal(i) == Legal)
                 {
@@ -184,7 +210,7 @@ public:
         assert(!GameOver());
         assert(CheckLegal(move.Col, move.Coord) == Legal);
 
-        auto z = Zobrist<N>::Instance();
+        auto z = Zobrist::Instance();
         uint64_t nextHash = _hashes[_turnNumber-1];
 
         if (move.Coord != PassCoord)
@@ -195,7 +221,7 @@ public:
             pt.Col = move.Col;
 
             // Cache which points need updating.
-            bool requireUpdate[N*N] = {false};
+            bool requireUpdate[_boardArea] = {false};
             requireUpdate[pt.Coord] = true;
 
             // First detect stones which will get captured and remove them.
@@ -217,7 +243,7 @@ public:
             }
 
             // Update the liberties of the affected stones.
-            for (int i = 0; i < N*N; i++)
+            for (int i = 0; i < _boardArea; i++)
             {
                 if (requireUpdate[i])
                 {
@@ -248,7 +274,7 @@ public:
     int Score() const
     {
         double score = -CurrentRules.Komi;
-        for (int i = 0; i < N*N; i++)
+        for (int i = 0; i < _boardArea; i++)
         {
             const Point& pt = _points[i];
             if (pt.Col == None)
@@ -270,11 +296,11 @@ public:
     {
         std::string s;
         Colour col;
-        for (int r = N-1; r >= 0; r--)
+        for (int r = _boardSize-1; r >= 0; r--)
         {
-            for (int c = 0; c < N; c++)
+            for (int c = 0; c < _boardSize; c++)
             {
-                col = _points[r*N+c].Col;
+                col = _points[r*_boardSize+c].Col;
                 s += col == None ? '.' : col == Black ? 'B' : 'W';
             }
 
@@ -286,24 +312,42 @@ public:
 
 private:
     Colour _colourToMove = Black;
-    Point _points[N*N] = {{None, 0, 0}};
+    Point* _points = nullptr;
     std::vector<uint64_t> _hashes;
     int _turnNumber = 1;
+    int _boardSize;
+    int _boardArea;
     bool _passes[2] = {false};
+
+    // Initialise an empty board of the specified size.
+    void InitialiseEmpty(int boardSize)
+    {
+        assert(boardSize > 0 && boardSize < MaxBoardSize);
+
+        _colourToMove = Black;
+        _boardSize = boardSize;
+        _boardArea = _boardSize*_boardSize;
+        _points = new Point[_boardArea];
+        for (int i = 0; i < _boardArea; i++)
+            _points[i] = { None, 0, 0 };
+
+        this->InitialiseNeighbours();
+        _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist::Instance()->BlackTurn() : 0);
+    }
 
     // Initialise the neighbours for each point.
     void InitialiseNeighbours()
     {
         int r, c;
-        for (int i = 0; i < N*N; i++)
+        for (int i = 0; i < _boardArea; i++)
         {
-            r = i / N, c = i % N;
+            r = i / _boardSize, c = i % _boardSize;
             _points[i].Coord = i;
             _points[i].Neighbours.clear();
-            if (r > 0) _points[i].Neighbours.push_back(&_points[i-N]);
-            if (r < N-1) _points[i].Neighbours.push_back(&_points[i+N]);
+            if (r > 0) _points[i].Neighbours.push_back(&_points[i-_boardSize]);
+            if (r < _boardSize-1) _points[i].Neighbours.push_back(&_points[i+_boardSize]);
             if (c > 0) _points[i].Neighbours.push_back(&_points[i-1]);
-            if (c < N-1) _points[i].Neighbours.push_back(&_points[i+1]);
+            if (c < _boardSize-1) _points[i].Neighbours.push_back(&_points[i+1]);
         }
     }
 
@@ -311,7 +355,7 @@ private:
     bool IsKoRepetition(Colour col, int loc, int captureLoc) const
     {
         Colour enemyCol = col == Black ? White : Black;
-        auto z = Zobrist<N>::Instance();
+        auto z = Zobrist::Instance();
         uint64_t nextHash =
             _hashes[_turnNumber-1]
             ^ z->Key(col, loc)
@@ -364,7 +408,7 @@ private:
         Colour origCol = pt->Col;
         pt->Col = None;
         pt->Liberties = 0;
-        groupHash ^= Zobrist<N>::Instance()->Key(origCol, pt->Coord);
+        groupHash ^= Zobrist::Instance()->Key(origCol, pt->Coord);
 
         for (Point* const n : pt->Neighbours)
         {

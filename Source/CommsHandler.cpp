@@ -1,5 +1,6 @@
 #include "Board.h"
 #include "CommsHandler.h"
+#include "Globals.h"
 #include "Move.h"
 #include "Rules.h"
 #include "Search.h"
@@ -65,7 +66,7 @@ bool CommsHandler::Process(const std::string& message)
         else if (command == "boardsize")
         {
             int size = stoi(tokens[i++]);
-            if (size > 0 && size < 26)
+            if (size > 0 && size <= MaxBoardSize)
             {
                 _boardSize = size;
                 _history.Clear();
@@ -94,7 +95,7 @@ bool CommsHandler::Process(const std::string& message)
             // Construct the current board state.
             std::string colString = ToLower(tokens[i]);
             Colour col = colString == "black" || colString == "b" ? Black : White;
-            Board board(_boardSize, col, _history);
+            Board board(col, _boardSize, _history);
 
             // Search for a fixed amount of time.
             Search<UCB1, Uniform> search;

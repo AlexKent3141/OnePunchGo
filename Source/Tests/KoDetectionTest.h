@@ -2,6 +2,7 @@
 #define __KO_DETECTION_TEST_H__
 
 #include "TestBase.h"
+#include "../Board.h"
 #include "../Move.h"
 #include "../Utils.h"
 #include <iostream>
@@ -47,16 +48,17 @@ public:
     }
 
 private:
-    static const int N = 9;
+    // All test cases are 9x9.
+    const int N = 9;
 
     bool RunTest(const std::vector<Move>& moves, const std::string& koCoord) const
     {
-        Board<N> board;
+        Board board(N);
         return CheckMoves(board, moves) && CheckKo(board, koCoord);
     }
 
     // Check that the sequence of moves is legal.
-    bool CheckMoves(Board<N>& board, const std::vector<Move>& moves) const
+    bool CheckMoves(Board& board, const std::vector<Move>& moves) const
     {
         bool pass = true;
         for (Move move : moves)
@@ -78,7 +80,7 @@ private:
     }
 
     // Check whether the specified ko coordinate is correctly recognised.
-    bool CheckKo(const Board<9>& board, const std::string& koCoord) const
+    bool CheckKo(const Board& board, const std::string& koCoord) const
     {
         std::cout << board.ToString() << std::endl;
         int coord = StringToCoord(koCoord, N);

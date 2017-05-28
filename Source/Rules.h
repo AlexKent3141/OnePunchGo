@@ -18,6 +18,6 @@ struct Rules
 // The AGA ruleset (used in the UK).
 const Rules AGA = { 7.5, Situational };
 
-Rules CurrentRules = AGA;
+extern Rules CurrentRules;
 
 #endif // __RULES_H__

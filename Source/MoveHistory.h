@@ -9,16 +9,21 @@
 class MoveHistory
 {
 public:
+    inline std::vector<Move> Moves() const { return _history; }
+
+    // Add a move to the history.
     void AddMove(const Move& move)
     {
         _history.push_back(move);
     }
 
+    // Undo the last move.
     void UndoLast()
     {
         _history.pop_back();
     }
 
+    // Clear the history.
     void Clear()
     {
         _history.clear();

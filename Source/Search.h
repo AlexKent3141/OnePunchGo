@@ -19,13 +19,12 @@ public:
     inline MoveStats Best() const { return _best; }
 
     // This method keeps searching until a call to Stop is made.
-    template<unsigned int N>
-    void Start(const Board<N>& pos)
+    void Start(const Board& pos)
     {
         Node* root = MakeRoot();
         root->Moves = pos.GetMoves();
 
-        Board<N> temp;
+        Board temp(pos.BoardSize());
         _stop = false;
         while (!_stop)
         {
@@ -73,8 +72,7 @@ private:
     MoveStats _best;
 
     // Select a node to expand.
-    template<unsigned int N>
-    Node* Select(Board<N>& temp, Node* root)
+    Node* Select(Board& temp, Node* root)
     {
         Node* current = root;
         while (current->FullyExpanded() && current->HasChildren())
@@ -87,8 +85,7 @@ private:
     }
 
     // Expand the chosen leaf node.
-    template<unsigned int N>
-    Node* Expand(Board<N>& temp, Node* leaf) const
+    Node* Expand(Board& temp, Node* leaf) const
     {
         Node* expanded = leaf;
         if (!expanded->FullyExpanded())
@@ -102,8 +99,7 @@ private:
     }
 
     // Perform a simulation from the specified game state.
-    template<unsigned int N>
-    int Simulate(Board<N>& temp)
+    int Simulate(Board& temp)
     {
         // Make moves according to the playout policy until a terminal state is reached.
         std::vector<Move> moves = temp.GetMoves(true);

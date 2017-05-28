@@ -2,6 +2,7 @@
 #define __MAKE_MOVE_TEST_H__
 
 #include "TestBase.h"
+#include "../Board.h"
 #include "../Move.h"
 #include "../Utils.h"
 #include <iostream>
@@ -47,16 +48,17 @@ public:
     }
 
 private:
-    static const int N = 9;
+    // All test cases are 9x9.
+    const int N = 9;
 
     bool RunTest(const std::vector<Move>& moves, const std::vector<std::string>& finalBoard) const
     {
-        Board<N> board;
+        Board board(N);
         return CheckMoves(board, moves) && CheckBoard(board, finalBoard);
     }
 
     // Check that the sequence of moves is legal.
-    bool CheckMoves(Board<N>& board, const std::vector<Move>& moves) const
+    bool CheckMoves(Board& board, const std::vector<Move>& moves) const
     {
         bool pass = true;
         for (Move move : moves)
@@ -78,7 +80,7 @@ private:
     }
 
     // Check that the final board state is correct.
-    bool CheckBoard(const Board<9>& board, const std::vector<std::string>& finalBoard) const
+    bool CheckBoard(const Board& board, const std::vector<std::string>& finalBoard) const
     {
         bool pass = true;
         for (int r = N-1; r >= 0 && pass; r--)
