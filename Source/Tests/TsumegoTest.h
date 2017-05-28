@@ -10,7 +10,6 @@
 #include "../Selection/UCB1.h"
 #include <chrono>
 #include <iostream>
-#include <thread>
 
 class TsumegoTest : public TestBase
 {
@@ -66,17 +65,12 @@ private:
 
         // Spawn a searching thread for this position.
         Search<UCB1, Uniform> search;
-        std::thread searchThread([&] { search.Start(board); });
-        searchThread.detach();
+        search.Start(board);
 
         // Allow the search to continue for 5 seconds.
         std::chrono::seconds duration(5);
         std::this_thread::sleep_for(duration);
         search.Stop();
-
-        // Wait a little longer to ensure the search has completed.
-        std::chrono::seconds delay(1);
-        std::this_thread::sleep_for(delay);
 
         const MoveStats& best = search.Best();
         const Move& move = best.LastMove;

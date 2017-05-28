@@ -5,6 +5,8 @@
 #include "Node.h"
 #include "Playout/PlayoutPolicy.h"
 #include "Selection/SelectionPolicy.h"
+#include <mutex>
+#include <thread>
 
 // This class performs executes the MCTS algorithm to find the best move.
 // The template parameters are:
@@ -18,9 +20,35 @@ static_assert(std::is_base_of<PlayoutPolicy, PP>::value, "Not a valid playout po
 public:
     inline MoveStats Best() const { return _best; }
 
-    // This method keeps searching until a call to Stop is made.
+    // Start a searching thread.
+    // TODO: Generalise to multiple searching threads.
     void Start(const Board& pos)
     {
+        std::thread worker([&] { DoSearch(pos); });
+        worker.detach();
+    }
+
+    // Stop the currently executing search.
+    void Stop()
+    {
+        _stop = true;
+
+        // Block until the mutex is available.
+        std::unique_lock<std::mutex> lock(_mtx);
+    }
+
+private:
+    bool _stop = false;
+    SP _sp;
+    PP _pp;
+    MoveStats _best;
+    std::mutex _mtx;
+
+    // This method keeps searching until a call to Stop is made.
+    void DoSearch(const Board& pos)
+    {
+        std::unique_lock<std::mutex> lock(_mtx);
+
         Node* root = MakeRoot();
         root->Moves = pos.GetMoves();
 
@@ -58,18 +86,6 @@ public:
 
         delete root;
     }
-
-    // Stop the currently executing search.
-    void Stop()
-    {
-        _stop = true;
-    }
-
-private:
-    bool _stop = false;
-    SP _sp;
-    PP _pp;
-    MoveStats _best;
 
     // Select a node to expand.
     Node* Select(Board& temp, Node* root)

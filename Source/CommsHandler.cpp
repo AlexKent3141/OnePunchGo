@@ -99,15 +99,11 @@ bool CommsHandler::Process(const std::string& message)
 
             // Search for a fixed amount of time.
             Search<UCB1, Uniform> search;
-            std::thread worker([&] { search.Start(board); });
+            search.Start(board);
 
             std::chrono::seconds searchTime(5);
             std::this_thread::sleep_for(searchTime);
             search.Stop();
-
-            // Wait a little longer to ensure that the search has completed.
-            std::chrono::seconds delay(1);
-            std::this_thread::sleep_for(delay);
 
             const MoveStats& best = search.Best();
             const Move& move = best.LastMove;
