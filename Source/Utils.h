@@ -24,6 +24,9 @@ public:
     // Split by characters.
 	std::vector<std::string> Split(const std::string&, const std::string& delims) const;
 
+    // Convert the string to lowercase.
+    std::string ToLower(const std::string&) const;
+
 private:
 	static Utils* _instance;
 

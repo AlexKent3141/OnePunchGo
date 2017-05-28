@@ -38,3 +38,13 @@ std::vector<std::string> Utils::Split(const std::string& s, const std::string& d
 
     return elems;
 }
+
+// Convert the string to lowercase.
+std::string Utils::ToLower(const std::string& s) const
+{
+    std::string lower;
+    for (size_t i = 0; i < s.size(); i++)
+        lower += tolower(s[i]);
+
+    return lower;
+}

@@ -99,7 +99,7 @@ bool CommsHandler::Process(const std::string& message)
         else if (command == "genmove")
         {
             // Construct the current board state.
-            std::string colString = ToLower(tokens[i]);
+            std::string colString = Utils::GetInstance()->ToLower(tokens[i]);
             Colour col = colString == "black" || colString == "b" ? Black : White;
             Board board(col, _boardSize, _history);
 
@@ -216,15 +216,6 @@ bool CommsHandler::IsInteger(const std::string& s) const
         res &= isdigit(s[i]);
 
     return res;
-}
-
-std::string CommsHandler::ToLower(const std::string& s) const
-{
-    std::string lower;
-    for (size_t i = 0; i < s.size(); i++)
-        lower += tolower(s[i]);
-
-    return lower;
 }
 
 void CommsHandler::SuccessResponse(int id, const std::string& data) const

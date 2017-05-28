@@ -2,6 +2,7 @@
 #define __MOVE_H__
 
 #include "Types.h"
+#include "Utils.h"
 #include <string>
 #include <cassert>
 
@@ -50,7 +51,10 @@ inline Move StringToMove(const std::string& str, int n)
 {
     Colour col = str[0] == 'B' ? Black : White;
     std::string coordStr = str.substr(2);
-    int coord = coordStr == "pass" ? PassCoord :  StringToCoord(coordStr, n);
+    int coord = Utils::GetInstance()->ToLower(coordStr) == "pass"
+        ? PassCoord
+        : StringToCoord(coordStr, n);
+
     return {col, coord};
 }
 

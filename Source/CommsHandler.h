@@ -40,7 +40,6 @@ private:
     bool IsLF(char) const;
     bool IsHash(char) const;
     bool IsInteger(const std::string&) const;
-    std::string ToLower(const std::string&) const;
 
     void SuccessResponse(int, const std::string&) const;
     void FailureResponse(int, const std::string&) const;
