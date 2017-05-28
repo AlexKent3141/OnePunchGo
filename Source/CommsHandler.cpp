@@ -10,11 +10,13 @@
 #include <cctype>
 #include <algorithm>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <thread>
 
 bool CommsHandler::Process(const std::string& message)
 {
+    Log("Received: " + message);
     bool alive = true;
 
     std::string cmd = PreProcess(message);
@@ -70,6 +72,7 @@ bool CommsHandler::Process(const std::string& message)
             {
                 _boardSize = size;
                 _history.Clear();
+                SuccessResponse(id, "");
             }
             else
             {
@@ -79,16 +82,19 @@ bool CommsHandler::Process(const std::string& message)
         else if (command == "clear_board")
         {
             _history.Clear();
+            SuccessResponse(id, "");
         }
         else if (command == "komi")
         {
             CurrentRules.Komi = stof(tokens[i++]);
+            SuccessResponse(id, "");
         }
         else if (command == "play")
         {
             // A move was specified.
             std::string move = tokens[i] + " " + tokens[i+1];
             _history.AddMove(StringToMove(move, _boardSize));
+            SuccessResponse(id, "");
         }
         else if (command == "genmove")
         {
@@ -96,6 +102,8 @@ bool CommsHandler::Process(const std::string& message)
             std::string colString = ToLower(tokens[i]);
             Colour col = colString == "black" || colString == "b" ? Black : White;
             Board board(col, _boardSize, _history);
+
+            Log(board.ToString());
 
             // Search for a fixed amount of time.
             Search<UCB1, Uniform> search;
@@ -107,11 +115,17 @@ bool CommsHandler::Process(const std::string& message)
 
             const MoveStats& best = search.Best();
             const Move& move = best.LastMove;
+
+            Log("Visits: " + std::to_string(best.Visits));
+            Log("WinRate: " + std::to_string((double)best.Wins / best.Visits));
+
+            _history.AddMove(move);
             SuccessResponse(id, CoordToString(move.Coord, _boardSize));
         }
         else if (command == "undo")
         {
             _history.UndoLast();
+            SuccessResponse(id, "");
         }
         else
         {
@@ -231,4 +245,12 @@ void CommsHandler::Response(const std::string& prefix, int id, const std::string
         + "\n\n";
 
     std::cout << res;
+    Log("Sent: " + res);
+}
+
+void CommsHandler::Log(const std::string& message) const
+{
+    std::ofstream log("CommsLog.txt", std::ios_base::app);
+    log << message << std::endl;
+    log.close();
 }

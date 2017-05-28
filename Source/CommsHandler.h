@@ -45,6 +45,8 @@ private:
     void SuccessResponse(int, const std::string&) const;
     void FailureResponse(int, const std::string&) const;
     void Response(const std::string&, int, const std::string&) const;
+
+    void Log(const std::string&) const;
 };
 
 #endif // __COMMS_HANDLER_H__
