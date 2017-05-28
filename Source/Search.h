@@ -20,6 +20,8 @@ static_assert(std::is_base_of<PlayoutPolicy, PP>::value, "Not a valid playout po
 public:
     inline MoveStats Best() const { return _best; }
 
+    inline int TreeSize() const { return _treeSize; }
+
     // Start a searching thread.
     // TODO: Generalise to multiple searching threads.
     void Start(const Board& pos)
@@ -42,6 +44,7 @@ private:
     SP _sp;
     PP _pp;
     MoveStats _best;
+    int _treeSize;
     std::mutex _mtx;
 
     // This method keeps searching until a call to Stop is made.
@@ -53,6 +56,7 @@ private:
         root->Moves = pos.GetMoves();
 
         Board temp(pos.BoardSize());
+        _treeSize = 0;
         _stop = false;
         while (!_stop)
         {
@@ -70,6 +74,8 @@ private:
 
             // Backpropagate the scores.
             UpdateScores(leaf, res);
+
+            ++_treeSize;
         }
 
         // Find the most promising move.

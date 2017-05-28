@@ -2,6 +2,7 @@
 #include "Tests/TestRunner.h"
 #include "Tests/MakeMoveTest.h"
 #include "Tests/KoDetectionTest.h"
+#include "Tests/PerformanceTest.h"
 #include "Tests/TsumegoTest.h"
 #include <iostream>
 #include <string>
@@ -15,6 +16,12 @@ int main(int argc, char* argv[])
         runner.RunTests<MakeMoveTest>();
         runner.RunTests<KoDetectionTest>();
         runner.RunTests<TsumegoTest>();
+    }
+    else if (argc == 2 && std::string(argv[1]) == "perf")
+    {
+        // Execute the performance tests.
+        TestRunner runner;
+        runner.RunTests<PerformanceTest>();
     }
     else
     {

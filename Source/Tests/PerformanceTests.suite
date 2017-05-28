@@ -1,0 +1,15 @@
+# A set of test cases for performance.
+# These tests are primarily concerned with measuring speed (i.e. number of playouts that are
+# achievable).
+
+Begin: 9x9 for 10 seconds.
+9 10
+End
+
+Begin: 13x13 for 20 seconds.
+13 20
+End
+
+Begin: 19x19 for 30 seconds.
+19 30
+End
