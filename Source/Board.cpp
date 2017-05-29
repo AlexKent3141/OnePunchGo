@@ -208,9 +208,10 @@ void Board::MakeMove(const Move& move)
             if (requireUpdate[i])
             {
                 int liberties = 0;
-                std::vector<Point*> group;
-                std::vector<Point*> considered;
-                FFLiberties(&_points[i], requireUpdate, liberties, group, considered);
+                int groupSize = 0;
+                bool inGroup[_boardArea] = {false};
+                bool considered[_boardArea] = {false};
+                FFLiberties(&_points[i], liberties, groupSize, requireUpdate, inGroup, considered);
             }
         }
     }
@@ -323,31 +324,34 @@ bool Board::IsKoRepetition(Colour col, int loc, int captureLoc) const
 
 // Flood fill algorithm which updates the liberties for all stones in the group containing
 // the specified point.
-void Board::FFLiberties(Point* const pt, bool* requireUpdate, int& liberties, std::vector<Point*>& group, std::vector<Point*>& considered, bool root)
+void Board::FFLiberties(Point* const pt, int& liberties, int& groupSize, bool* requireUpdate, bool* inGroup, bool* considered, bool root)
 {
-    group.push_back(pt);
+    inGroup[pt->Coord] = true;
+    ++groupSize;
     for (Point* const n : pt->Neighbours)
     {
-        if (n->Col == pt->Col &&
-            std::find(group.begin(), group.end(), n) == group.end())
+        if (n->Col == pt->Col && !inGroup[n->Coord])
         {
-            FFLiberties(n, requireUpdate, liberties, group, considered, false);
+            FFLiberties(n, liberties, groupSize, requireUpdate, inGroup, considered, false);
         }
-        else if (n->Col == None &&
-            std::find(considered.begin(), considered.end(), n) == considered.end())
+        else if (n->Col == None && !considered[n->Coord])
         {
             ++liberties;
-            considered.push_back(n);
+            considered[n->Coord] = true;
         }
     }
 
     if (root)
     {
-        for (Point* const groupPt : group)
+        for (int i = 0; i < _boardArea; i++)
         {
-            groupPt->Liberties = liberties;
-            groupPt->GroupSize = group.size();
-            requireUpdate[groupPt->Coord] = false;
+            if (inGroup[i])
+            {
+                Point& groupPt = _points[i];
+                groupPt.Liberties = liberties;
+                groupPt.GroupSize = groupSize;
+                requireUpdate[groupPt.Coord] = false;
+            }
         }
     }
 }

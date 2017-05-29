@@ -92,7 +92,7 @@ private:
 
     // Flood fill algorithm which updates the liberties for all stones in the group containing
     // the specified point.
-    void FFLiberties(Point* const, bool*, int&, std::vector<Point*>&, std::vector<Point*>&, bool root = true);
+    void FFLiberties(Point* const, int&, int&, bool*, bool*, bool*, bool root = true);
 
     // Flood fill algorithm which removes all stones in the group containing the specified point.
     // Points which are affected by this capture get flagged as requiring an update.
