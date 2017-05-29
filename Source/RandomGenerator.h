@@ -21,11 +21,17 @@ public:
         assert(_s != 0);
     }
 
-    // Generate the next pseudo-random number.
+    // Generate the next pseudo-random 64-bit integer.
     uint64_t Next()
     {
         _s ^= _s >> 12; _s ^= _s << 25; _s ^= _s >> 27;
         return _s * 0x2545F4914F6CDD1DLL;
+    }
+
+    // Generate a pseudo-random integer 0 <= x < bound.
+    uint64_t Next(int bound)
+    {
+        return Next() % bound;
     }
     
 private:

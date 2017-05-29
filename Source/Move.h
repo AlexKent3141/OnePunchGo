@@ -7,13 +7,27 @@
 #include <cassert>
 
 const int PassCoord = -1;
+const int BadCoord = -2;
 
 // The data for a single move.
 struct Move
 {
     Colour Col;
     int Coord;
+
+    bool operator==(const Move& other)
+    {
+        return Col == other.Col && Coord == other.Coord;
+    }
+
+    bool operator!=(const Move& other)
+    {
+        return !(*this == other);
+    }
 };
+
+// This represents an invalid move.
+const Move BadMove = { None, BadCoord };
 
 inline int StringToCoord(const std::string& str, int n)
 {

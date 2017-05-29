@@ -8,9 +8,23 @@ class Uniform : public PlayoutPolicy
 {
 public:
     // Choose a move using uniform random distribution.
-    Move Select(const std::vector<Move>& moves)
+    Move Select(const Board& board)
     {
-        return moves[_gen.Next() % moves.size()];
+        if (board.GameOver())
+            return BadMove;
+
+        // Try and pick a legal move by guessing to save generating all legal moves.
+        const int NumTries = 4;
+        int boardArea = board.Size() * board.Size();
+        for (int i = 0; i < NumTries; i++)
+        {
+            int coord = _gen.Next(boardArea);
+            if (board.CheckLegal(coord) == Legal)
+                return { board.ColourToMove(), coord };
+        }
+
+        auto moves = board.GetMoves(true);
+        return moves[_gen.Next(moves.size())];
     }
 
 private:

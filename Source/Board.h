@@ -34,7 +34,9 @@ public:
 
     ~Board();
 
-    inline int BoardSize() const { return _boardSize; }
+    inline int Size() const { return _boardSize; }
+
+    inline Colour ColourToMove() const { return _colourToMove; }
 
     // Get the colour at the specified location.
     inline Colour PointColour(int loc) const { return _points[loc].Col; }

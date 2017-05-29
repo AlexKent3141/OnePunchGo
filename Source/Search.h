@@ -55,7 +55,7 @@ private:
         Node* root = MakeRoot();
         root->Moves = pos.GetMoves();
 
-        Board temp(pos.BoardSize());
+        Board temp(pos.Size());
         _treeSize = 0;
         _stop = false;
         while (!_stop)
@@ -124,12 +124,10 @@ private:
     int Simulate(Board& temp)
     {
         // Make moves according to the playout policy until a terminal state is reached.
-        std::vector<Move> moves = temp.GetMoves(true);
-        while (moves.size() > 0)
+        Move move;
+        while ((move = _pp.Select(temp)) != BadMove)
         {
-            Move move = _pp.Select(moves);
             temp.MakeMove(move);
-            moves = temp.GetMoves(true);
         }
 
         return temp.Score();
