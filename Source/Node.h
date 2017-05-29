@@ -17,6 +17,12 @@ struct MoveStats
         ++Visits;
         Wins += LastMove.Col == Black ? score : -score;
     }
+
+    // Get the probability of winning for this node.
+    double WinningChance() const
+    {
+        return ((double)Wins / Visits + 1) / 2;
+    }
 };
 
 // A node in the dynamically generated MCTS tree.

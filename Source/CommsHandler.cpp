@@ -115,12 +115,21 @@ bool CommsHandler::Process(const std::string& message)
 
             const MoveStats& best = search.Best();
             const Move& move = best.LastMove;
+            double winRate = best.WinningChance();
 
             Log("Visits: " + std::to_string(best.Visits));
-            Log("WinRate: " + std::to_string((double)best.Wins / best.Visits));
+            Log("WinRate: " + std::to_string(winRate));
 
-            _history.AddMove(move);
-            SuccessResponse(id, CoordToString(move.Coord, _boardSize));
+            const double ResignThreshold = 0.1;
+            if (winRate > ResignThreshold)
+            {
+                _history.AddMove(move);
+                SuccessResponse(id, CoordToString(move.Coord, _boardSize));
+            }
+            else
+            {
+                SuccessResponse(id, "resign");
+            }
         }
         else if (command == "undo")
         {
