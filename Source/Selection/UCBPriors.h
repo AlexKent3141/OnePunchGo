@@ -5,20 +5,20 @@
 #include "UCB1.h"
 #include <iostream>
 
-class UCBPriors : public UCB1
+class UCBPriors : public UCB<100>
 {
 protected:
     virtual double Policy(Node* const n) const
     {
         const MoveStats& stats = n->Stats;
         double priorTerm = Prior(stats.LastMove) / stats.Visits;
-        return priorTerm + UCB1::Policy(n);
+        return priorTerm + UCB<100>::Policy(n);
     }
 
 private:
-    const double CaptureScore = 10;
-    const double AtariScore = 5;
-    const double SelfAtariScore = -10;
+    const double CaptureScore = 100;
+    const double AtariScore = 50;
+    const double SelfAtariScore = -100;
 
     // Calculate a prior score for the move in order to bias the search.
     double Prior(const Move& move) const
