@@ -8,6 +8,7 @@
 #include "../Playout/Uniform.h"
 #include "../Search.h"
 #include "../Selection/UCB1.h"
+#include "../Selection/UCBPriors.h"
 #include <chrono>
 #include <iostream>
 
@@ -64,7 +65,7 @@ private:
         CurrentRules.Komi = N*N - 1; // Black must kill everything to win.
 
         // Spawn a searching thread for this position.
-        Search<UCB1, Uniform> search;
+        Search<UCBPriors, Uniform> search;
         search.Start(board);
 
         // Allow the search to continue for 5 seconds.
@@ -75,7 +76,7 @@ private:
         const MoveStats& best = search.Best();
         const Move& move = best.LastMove;
         std::cout << MoveToString(move, N) << std::endl;
-        std::cout << "Win rate: " << (double)best.Wins / best.Visits << std::endl;
+        std::cout << "Win rate: " << best.WinningChance() << std::endl;
 
         return move.Col == solution.Col && move.Coord == solution.Coord;
     }

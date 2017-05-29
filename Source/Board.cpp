@@ -72,13 +72,13 @@ void Board::CloneFrom(const Board& other)
 }
 
 // Check the legality of the specified move in this position.
-Legality Board::CheckLegal(int loc) const
+MoveInfo Board::CheckMove(int loc) const
 {
-    return CheckLegal(this->_colourToMove, loc);
+    return CheckMove(this->_colourToMove, loc);
 }
 
 // Check the legality of the specified move in this position.
-Legality Board::CheckLegal(Colour col, int loc) const
+MoveInfo Board::CheckMove(Colour col, int loc) const
 {
     // Passing is always legal.
     if (loc == PassCoord)
@@ -86,7 +86,7 @@ Legality Board::CheckLegal(Colour col, int loc) const
 
     // Check occupancy.
     const Point& pt = this->_points[loc];
-    Legality res = pt.Col == None ? Legal : Occupied;
+    MoveInfo res = pt.Col == None ? Legal : Occupied;
     if (res == Legal)
     {
         // Check for suicide and ko.
@@ -111,12 +111,20 @@ Legality Board::CheckLegal(Colour col, int loc) const
                     captureLoc = n->Coord;
                     capturesWithRepetition += n->GroupSize;
                 }
+                else if (n->Liberties == 2)
+                {
+                    res |= Atari;
+                }
             }
         }
 
         bool suicide = liberties == 0;
         bool repetition = capturesWithRepetition == 1 && IsKoRepetition(col, loc, captureLoc);
         res = suicide ? Suicide : repetition ? Ko : Legal;
+
+        // Do some extra work to further classify the move.
+        if (liberties == 1) res |= SelfAtari;
+        if (capturesWithRepetition > 0) res |= Capture;
     }
 
     return res;
@@ -144,11 +152,12 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
     {
         for (int i = 0; i < _boardArea; i++)
         {
-            if (CheckLegal(i) == Legal)
+            MoveInfo info = CheckMove(i);
+            if (info & Legal)
             {
                 if (!duringPlayout || !FillsEye(this->_colourToMove, i))
                 {
-                    moves.push_back({this->_colourToMove, i});
+                    moves.push_back({this->_colourToMove, i, info});
                 }
             }
         }
@@ -157,7 +166,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
         // are no other moves available.
         if (!duringPlayout || moves.size() == 0)
         {
-            moves.push_back({this->_colourToMove, PassCoord});
+            moves.push_back({this->_colourToMove, PassCoord, Legal});
         }
     }
 
@@ -168,7 +177,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
 void Board::MakeMove(const Move& move)
 {
     assert(!GameOver());
-    assert(CheckLegal(move.Col, move.Coord) == Legal);
+    assert(CheckMove(move.Col, move.Coord) & Legal);
 
     auto z = Zobrist::Instance();
     uint64_t nextHash = _hashes[_turnNumber-1];

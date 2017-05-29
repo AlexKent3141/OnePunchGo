@@ -64,7 +64,7 @@ private:
         for (Move move : moves)
         {
             std::cout << MoveToString(move, N) << std::endl;
-            if (board.CheckLegal(move.Col, move.Coord) == Legal)
+            if (board.CheckMove(move.Col, move.Coord) & Legal)
             {
                 board.MakeMove(move);
             }
@@ -84,7 +84,7 @@ private:
     {
         std::cout << board.ToString() << std::endl;
         int coord = StringToCoord(koCoord, N);
-        return board.CheckLegal(coord) == Ko;
+        return board.CheckMove(coord) & Ko;
     }
 
     bool StartsWith(const std::string& str, const std::string& sub) const

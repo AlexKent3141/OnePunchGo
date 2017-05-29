@@ -64,7 +64,7 @@ private:
         for (Move move : moves)
         {
             std::cout << MoveToString(move, N) << std::endl;
-            if (board.CheckLegal(move.Col, move.Coord) == Legal)
+            if (board.CheckMove(move.Col, move.Coord) & Legal)
             {
                 board.MakeMove(move);
             }

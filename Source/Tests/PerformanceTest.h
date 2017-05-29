@@ -8,6 +8,7 @@
 #include "../Playout/Uniform.h"
 #include "../Search.h"
 #include "../Selection/UCB1.h"
+#include "../Selection/UCBPriors.h"
 #include "../Utils.h"
 #include <cassert>
 #include <chrono>
@@ -41,7 +42,7 @@ private:
         Board board(boardSize);
 
         // Spawn a searching thread for this position.
-        Search<UCB1, Uniform> search;
+        Search<UCBPriors, Uniform> search;
         search.Start(board);
 
         // Allow the search to continue for the specified duration.

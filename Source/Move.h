@@ -14,6 +14,7 @@ struct Move
 {
     Colour Col;
     int Coord;
+    MoveInfo Info;
 
     bool operator==(const Move& other)
     {

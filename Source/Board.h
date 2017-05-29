@@ -51,10 +51,10 @@ public:
     void CloneFrom(const Board&);
 
     // Check the legality of the specified move in this position.
-    Legality CheckLegal(int) const;
+    MoveInfo CheckMove(int) const;
 
     // Check the legality of the specified move in this position.
-    Legality CheckLegal(Colour, int) const;
+    MoveInfo CheckMove(Colour, int) const;
 
     // Check whether the specified move will fill an eye.
     // This is currently more of a pseudo-eye check as it does not look at the diagonals.

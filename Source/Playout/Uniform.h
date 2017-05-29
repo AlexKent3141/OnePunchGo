@@ -19,7 +19,7 @@ public:
         for (int i = 0; i < NumTries; i++)
         {
             int coord = _gen.Next(boardArea);
-            if (board.CheckLegal(coord) == Legal)
+            if (board.CheckMove(coord) & Legal)
                 return { board.ColourToMove(), coord };
         }
 

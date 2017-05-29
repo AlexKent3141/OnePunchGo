@@ -5,7 +5,7 @@
 #include "Rules.h"
 #include "Search.h"
 #include "Utils.h"
-#include "Selection/UCB1.h"
+#include "Selection/UCBPriors.h"
 #include "Playout/Uniform.h"
 #include <cctype>
 #include <algorithm>
@@ -106,7 +106,7 @@ bool CommsHandler::Process(const std::string& message)
             Log(board.ToString());
 
             // Search for a fixed amount of time.
-            Search<UCB1, Uniform> search;
+            Search<UCBPriors, Uniform> search;
             search.Start(board);
 
             std::chrono::seconds searchTime(5);
