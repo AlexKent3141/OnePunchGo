@@ -7,7 +7,6 @@
 #include "../Node.h"
 #include "../Playout/Uniform.h"
 #include "../Search.h"
-#include "../Selection/UCB1.h"
 #include "../Selection/UCBPriors.h"
 #include "../Utils.h"
 #include <cassert>

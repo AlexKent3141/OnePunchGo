@@ -8,7 +8,6 @@
 #include "../Playout/Uniform.h"
 #include "../Search.h"
 #include "../Selection/UCB1.h"
-#include "../Selection/UCBPriors.h"
 #include <chrono>
 #include <iostream>
 
@@ -65,7 +64,9 @@ private:
         CurrentRules.Komi = N*N - 1; // Black must kill everything to win.
 
         // Spawn a searching thread for this position.
-        Search<UCBPriors, Uniform> search;
+        // Note: The UCB1 algorithm is used for this as it seems to perform better in these
+        // restricted scenarios.
+        Search<UCB1, Uniform> search;
         search.Start(board);
 
         // Allow the search to continue for 5 seconds.
