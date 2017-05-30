@@ -16,9 +16,9 @@ protected:
     }
 
 private:
-    const double CaptureScore = 100;
-    const double AtariScore = 50;
-    const double SelfAtariScore = -100;
+    const double CaptureScore = 10;
+    const double AtariScore = 5;
+    const double SelfAtariScore = -10;
 
     // Calculate a prior score for the move in order to bias the search.
     double Prior(const Move& move) const

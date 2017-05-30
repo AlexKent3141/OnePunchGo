@@ -16,11 +16,12 @@ public:
         // Try and pick a legal move by guessing to save generating all legal moves.
         const int NumTries = 4;
         int boardArea = board.Size() * board.Size();
+        Colour col = board.ColourToMove();
         for (int i = 0; i < NumTries; i++)
         {
             int coord = _gen.Next(boardArea);
-            if (board.CheckMove(coord) & Legal)
-                return { board.ColourToMove(), coord };
+            if ((board.CheckMove(coord) & Legal) && !board.FillsEye(col, coord))
+                return { col, coord };
         }
 
         auto moves = board.GetMoves(true);
