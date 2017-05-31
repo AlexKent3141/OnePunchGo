@@ -7,6 +7,7 @@
 #include "Utils.h"
 #include "Selection/UCBPriors.h"
 #include "Playout/Uniform.h"
+#include "Playout/BestOf.h"
 #include <cctype>
 #include <algorithm>
 #include <chrono>
@@ -106,7 +107,7 @@ bool CommsHandler::Process(const std::string& message)
             Log(board.ToString());
 
             // Search for a fixed amount of time.
-            Search<UCBPriors, Uniform> search;
+            Search<UCBPriors, BestOf<4>> search;
             search.Start(board);
 
             std::chrono::seconds searchTime(5);
@@ -121,7 +122,13 @@ bool CommsHandler::Process(const std::string& message)
             Log("WinRate: " + std::to_string(winRate));
 
             const double ResignThreshold = 0.1;
-            if (winRate > ResignThreshold)
+            const double PassThreshold = 0.9999;
+            if (winRate > PassThreshold)
+            {
+                _history.AddMove({col, PassCoord});
+                SuccessResponse(id, "pass");
+            }
+            else if (winRate > ResignThreshold)
             {
                 _history.AddMove(move);
                 SuccessResponse(id, CoordToString(move.Coord, _boardSize));

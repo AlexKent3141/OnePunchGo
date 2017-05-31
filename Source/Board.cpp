@@ -92,7 +92,9 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         // Check for suicide and ko.
         int liberties = 0;
         int captureLoc;
-        int capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
+        size_t capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
+        size_t friendlyNeighbours = 0;
+        bool friendInAtari = false;
         for (const Point* const n : pt.Neighbours)
         {
             if (n->Col == None)
@@ -102,6 +104,8 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             else if (n->Col == col)
             {
                 liberties += n->Liberties-1;
+                friendlyNeighbours += n->Liberties > 1 ? 1 : 0;
+                friendInAtari = friendInAtari || n->Liberties == 1;
             }
             else
             {
@@ -125,23 +129,11 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         // Do some extra work to further classify the move.
         if (liberties == 1) res |= SelfAtari;
         if (capturesWithRepetition > 0) res |= Capture;
+        if (friendlyNeighbours == pt.Neighbours.size()) res |= FillsEye;
+        if (friendInAtari && liberties > 1) res |= Save;
     }
 
     return res;
-}
-
-// Check whether the specified move will fill an eye.
-// This is currently more of a pseudo-eye check as it does not look at the diagonals.
-bool Board::FillsEye(Colour col, int loc) const
-{
-    size_t friendlyNeighbours = 0;
-    const Point& pt = this->_points[loc];
-    for (const Point* const n : pt.Neighbours)
-    {
-        friendlyNeighbours += n->Col == col && n->Liberties > 1 ? 1 : 0;
-    }
-
-    return friendlyNeighbours == pt.Neighbours.size();
 }
 
 // Get all moves available for the current colour.
@@ -155,7 +147,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
             MoveInfo info = CheckMove(i);
             if (info & Legal)
             {
-                if (!duringPlayout || !FillsEye(this->_colourToMove, i))
+                if (!duringPlayout || !(info & FillsEye))
                 {
                     moves.push_back({this->_colourToMove, i, info});
                 }

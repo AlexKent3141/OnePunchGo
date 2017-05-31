@@ -20,7 +20,8 @@ public:
         for (int i = 0; i < NumTries; i++)
         {
             int coord = _gen.Next(boardArea);
-            if ((board.CheckMove(coord) & Legal) && !board.FillsEye(col, coord))
+            MoveInfo info = board.CheckMove(coord);
+            if ((info & Legal) && !(info & FillsEye))
                 return { col, coord };
         }
 

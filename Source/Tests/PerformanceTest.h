@@ -6,6 +6,7 @@
 #include "../Move.h"
 #include "../Node.h"
 #include "../Playout/Uniform.h"
+#include "../Playout/BestOf.h"
 #include "../Search.h"
 #include "../Selection/UCBPriors.h"
 #include "../Utils.h"
@@ -41,7 +42,7 @@ private:
         Board board(boardSize);
 
         // Spawn a searching thread for this position.
-        Search<UCBPriors, Uniform> search;
+        Search<UCBPriors, BestOf<4>> search;
         search.Start(board);
 
         // Allow the search to continue for the specified duration.

@@ -56,10 +56,6 @@ public:
     // Check the legality of the specified move in this position.
     MoveInfo CheckMove(Colour, int) const;
 
-    // Check whether the specified move will fill an eye.
-    // This is currently more of a pseudo-eye check as it does not look at the diagonals.
-    bool FillsEye(Colour, int) const;
-
     // Get all moves available for the current colour.
     std::vector<Move> GetMoves(bool duringPlayout = false) const;
 

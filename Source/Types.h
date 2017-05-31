@@ -10,12 +10,15 @@ enum Colour
 
 typedef int MoveInfo;
 
-const MoveInfo Legal = 1 << 0;
-const MoveInfo Occupied = 1 << 1;
-const MoveInfo Suicide = 1 << 2;
-const MoveInfo Ko = 1 << 3;
-const MoveInfo Capture = 1 << 4;
+// Types of move (can be combined).
+const MoveInfo Occupied = 1 << 0;
+const MoveInfo Suicide = 1 << 1;
+const MoveInfo Ko = 1 << 2;
+const MoveInfo Legal = 1 << 3;
+const MoveInfo SelfAtari = 1 << 4;
 const MoveInfo Atari = 1 << 5;
-const MoveInfo SelfAtari = 1 << 6;
+const MoveInfo Save = 1 << 6;
+const MoveInfo Capture = 1 << 7;
+const MoveInfo FillsEye = 1 << 8;
 
 #endif // __TYPES_H__
