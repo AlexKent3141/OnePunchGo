@@ -17,21 +17,25 @@ public:
         }
     }
 
-    void AddStates()
+    void Expand()
     {
-        _nextStates = new PatternState[4];
+        if (_terminal)
+        {
+            _nextStates = new PatternState[4];
+            _terminal = false;
+        }
     }
 
     // Get the number of patterns that match so far.
     size_t NumPatterns() const
     {
-        return _matchingPatterns.size();
+        return _matchingPatterns;
     }
 
     // Add a pattern to this state.
-    void AddPattern(Pattern* pat)
+    void AddPattern()
     {
-        _matchingPatterns.push_back(pat);
+        ++_matchingPatterns;
     }
 
     // Get the next state given the next location in the pattern.
@@ -41,8 +45,11 @@ public:
     }
 
 private:
-    // The patterns which match so far.
-    std::vector<Pattern*> _matchingPatterns;
+    // Boolean indicating whether this state is terminal.
+    bool _terminal = true;
+
+    // The number of matching patterns at this point.
+    size_t _matchingPatterns = 0;
 
     // The reachable states from this one depending on the next location type.
     PatternState* _nextStates = nullptr;

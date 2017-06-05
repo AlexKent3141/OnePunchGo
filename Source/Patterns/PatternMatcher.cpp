@@ -1,5 +1,6 @@
-#include "PatternMatcher.h"
 #include "Pattern.h"
+#include "PatternMatcher.h"
+#include "PatternSpiral.h"
 #include <fstream>
 
 std::vector<Pattern*>* PatternMatcher::_patterns = nullptr;
@@ -38,6 +39,7 @@ bool PatternMatcher::HasMatch(const Board& board, int n, int row, int col) const
     return false;
 }
 
+// Load the patterns from the file and store all reflections/rotations of each pattern.
 void PatternMatcher::LoadPatterns(const std::string& source, size_t n)
 {
     std::ifstream s(source);
@@ -62,6 +64,25 @@ void PatternMatcher::LoadPatterns(const std::string& source, size_t n)
     s.close();
 }
 
+// Once all of the nxn patterns have been loaded construct the DFA.
 void PatternMatcher::InitialiseDFA(int n)
 {
+    PatternSpiral sp(n);
+    int spLoc;
+    for (size_t i = 0; i < _patterns[n].size(); i++)
+    {
+        // Classify this pattern.
+        Pattern const* pat = _patterns[n][i];
+
+        PatternState& current = _roots[n];
+        for (size_t j = 0; j < sp.Size(); j++)
+        {
+            spLoc = sp[j];
+            Location loc = (*pat)[spLoc];
+
+            current.AddPattern();
+            current.Expand();
+            current = current.Child(loc);
+        }
+    }
 }

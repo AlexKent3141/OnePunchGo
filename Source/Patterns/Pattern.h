@@ -35,6 +35,15 @@ public:
         }
     }
 
+    ~Pattern()
+    {
+        if (_locations != nullptr)
+        {
+            delete[] _locations;
+            _locations = nullptr;
+        }
+    }
+
     bool operator==(const Pattern& other) const
     {
         if (_n != other._n) return false;
@@ -49,13 +58,9 @@ public:
         return !(*this == other);
     }
 
-    ~Pattern()
+    Location operator[](const int i) const
     {
-        if (_locations != nullptr)
-        {
-            delete[] _locations;
-            _locations = nullptr;
-        }
+        return _locations[i];
     }
 
     std::vector<Pattern*> Mirrors()
