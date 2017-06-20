@@ -16,7 +16,9 @@ public:
     static void CleanUp();
 
     // Check whether there is a matching nxn pattern for the specified board location.
-    bool HasMatch(const Board& board, int n, int row, int col) const;
+    bool HasMatch(const Board& board, int patternSize, int row, int col) const;
+    
+    bool HasMatch(const Board& board, Colour colourToMove, int patternSize, int row, int col) const;
 
 private:
     // Store the patterns for each pattern size.

@@ -19,10 +19,10 @@ public:
 
     void Expand()
     {
-        if (_terminal)
+        if (!_expanded)
         {
             _nextStates = new PatternState[4];
-            _terminal = false;
+            _expanded = true;
         }
     }
 
@@ -39,14 +39,14 @@ public:
     }
 
     // Get the next state given the next location in the pattern.
-    PatternState& Child(Location loc)
+    PatternState* Child(Location loc)
     {
-        return _nextStates[(int)loc];
+        return &_nextStates[(int)loc];
     }
 
 private:
-    // Boolean indicating whether this state is terminal.
-    bool _terminal = true;
+    // Boolean indicating whether this state is expanded.
+    bool _expanded = false;
 
     // The number of matching patterns at this point.
     size_t _matchingPatterns = 0;

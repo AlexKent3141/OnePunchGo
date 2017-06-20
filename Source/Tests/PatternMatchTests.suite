@@ -1,0 +1,26 @@
+# Tests which exercise the pattern matching functionality.
+# Each test consists of moves on a 3x3 board leaving the central point empty.
+# The resulting position either matches a 3x3 pattern or not - it must be classified correctly.
+
+# .B.
+# W.W
+# ...
+Begin: Match 1
+Moves:
+W A2
+B B3
+W C2
+Result:
+B True
+End
+
+# .B.
+# ...
+# .W.
+Begin: No match 1
+Moves:
+B B3
+W B1
+Result:
+B False
+End

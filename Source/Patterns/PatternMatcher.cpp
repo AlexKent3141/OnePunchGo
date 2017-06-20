@@ -1,6 +1,8 @@
+#include "BoardSpiral.h"
 #include "Pattern.h"
 #include "PatternMatcher.h"
 #include "PatternSpiral.h"
+#include "../Types.h"
 #include <fstream>
 
 std::vector<Pattern*>* PatternMatcher::_patterns = nullptr;
@@ -34,9 +36,50 @@ void PatternMatcher::CleanUp()
     }
 }
 
-bool PatternMatcher::HasMatch(const Board& board, int n, int row, int col) const
+// Check whether the specified location on the board matches one of the nxn patterns.
+bool PatternMatcher::HasMatch(const Board& board, int patternSize, int row, int col) const
 {
-    return false;
+    const Colour CurrentPlayer = board.ColourToMove();
+    return HasMatch(board, CurrentPlayer, patternSize, row, col);
+}
+
+bool PatternMatcher::HasMatch(const Board& board, Colour colourToMove, int patternSize, int row, int col) const
+{
+    const int BoardSize = board.Size();
+    BoardSpiral sp(patternSize);
+
+    PatternState* current = &_roots[patternSize];
+
+    int currentRow, currentCol;
+    bool onBoard;
+    for (size_t i = 0; i < sp.Size(); i++)
+    {
+        auto next = sp[i];
+        currentRow = row + next.first;
+        currentCol = col + next.second;
+
+        // What is the location type on the board at this point.
+        onBoard = currentRow >= 0 && currentRow < BoardSize &&
+                  currentCol >= 0 && currentCol < BoardSize;
+
+        Location type = OffBoard;
+        if (onBoard)
+        {
+            int loc = currentRow*BoardSize + currentCol;
+            Colour col = board.PointColour(loc);
+            type = col == None ? Empty
+                : col == colourToMove ? Player
+                : Opponent;
+        }
+
+        current = current->Child(type);
+        if (current->NumPatterns() == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // Load the patterns from the file and store all reflections/rotations of each pattern.
@@ -74,15 +117,17 @@ void PatternMatcher::InitialiseDFA(int n)
         // Classify this pattern.
         Pattern const* pat = _patterns[n][i];
 
-        PatternState& current = _roots[n];
+        PatternState* current = &_roots[n];
         for (size_t j = 0; j < sp.Size(); j++)
         {
             spLoc = sp[j];
             Location loc = (*pat)[spLoc];
 
-            current.AddPattern();
-            current.Expand();
-            current = current.Child(loc);
+            current->AddPattern();
+            current->Expand();
+            current = current->Child(loc);
         }
+
+        current->AddPattern();
     }
 }
