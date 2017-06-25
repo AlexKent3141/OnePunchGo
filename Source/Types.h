@@ -20,5 +20,6 @@ const MoveInfo Atari = 1 << 5;
 const MoveInfo Save = 1 << 6;
 const MoveInfo Capture = 1 << 7;
 const MoveInfo FillsEye = 1 << 8;
+const MoveInfo Pat3Match = 1 << 9;
 
 #endif // __TYPES_H__

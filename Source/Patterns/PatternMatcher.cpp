@@ -7,11 +7,13 @@
 
 std::vector<Pattern*>* PatternMatcher::_patterns = nullptr;
 PatternState* PatternMatcher::_roots = nullptr;
+BoardSpiral* PatternMatcher::_boardSpirals = nullptr;
 
 void PatternMatcher::Load(const std::string& source, size_t n)
 {
     if (_patterns == nullptr) _patterns = new std::vector<Pattern*>[MaxPatternSize];
     if (_roots == nullptr) _roots = new PatternState[MaxPatternSize];
+    if (_boardSpirals == nullptr) InitialiseSpirals();
 
     if (_patterns[n].size() == 0)
     {
@@ -37,20 +39,22 @@ void PatternMatcher::CleanUp()
 }
 
 // Check whether the specified location on the board matches one of the nxn patterns.
-bool PatternMatcher::HasMatch(const Board& board, int patternSize, int row, int col) const
+bool PatternMatcher::HasMatch(const Board& board, int patternSize, int loc) const
 {
     const Colour CurrentPlayer = board.ColourToMove();
-    return HasMatch(board, CurrentPlayer, patternSize, row, col);
+    return HasMatch(board, CurrentPlayer, patternSize, loc);
 }
 
-bool PatternMatcher::HasMatch(const Board& board, Colour colourToMove, int patternSize, int row, int col) const
+bool PatternMatcher::HasMatch(const Board& board, Colour colourToMove, int patternSize, int loc) const
 {
     const int BoardSize = board.Size();
-    BoardSpiral sp(patternSize);
+    BoardSpiral& sp = _boardSpirals[patternSize];
 
     PatternState* current = &_roots[patternSize];
 
     int currentRow, currentCol;
+    int row = loc / BoardSize;
+    int col = loc % BoardSize;
     bool onBoard;
     for (size_t i = 0; i < sp.Size(); i++)
     {
@@ -80,6 +84,15 @@ bool PatternMatcher::HasMatch(const Board& board, Colour colourToMove, int patte
     }
 
     return true;
+}
+
+void PatternMatcher::InitialiseSpirals()
+{
+    _boardSpirals = new BoardSpiral[MaxPatternSize];
+    for (int i = 3; i < MaxPatternSize; i++)
+    {
+        _boardSpirals[i] = BoardSpiral(i);
+    }
 }
 
 // Load the patterns from the file and store all reflections/rotations of each pattern.

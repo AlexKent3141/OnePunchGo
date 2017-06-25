@@ -8,12 +8,6 @@
 class TestBase
 {
 public:
-    // Do any required one time setup for this test type.
-    virtual void OneTimeSetup() {}
-
-    // Do any required one time cleanup for this test type.
-    virtual void OneTimeCleanup() {}
-
     // Get the source of the test cases.
     virtual std::string TestFileName() const = 0;
 

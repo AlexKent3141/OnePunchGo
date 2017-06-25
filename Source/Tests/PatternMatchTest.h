@@ -11,16 +11,6 @@
 class PatternMatchTest : public TestBase
 {
 public:
-    void OneTimeSetup()
-    {
-        PatternMatcher::Load("test3.pat", N);
-    }
-
-    void OneTimeCleanup()
-    {
-        PatternMatcher::CleanUp();
-    }
-
     std::string TestFileName() const
     {
         return "PatternMatchTests.suite";
@@ -84,9 +74,9 @@ private:
     // Check whether there is a matching pattern for this 3x3 position.
     bool CheckForPattern(const Board& board, Colour colourToMove) const
     {
-        int boardCentre = N/2;
+        int boardCentreLoc = N*N/2;
         PatternMatcher matcher;
-        return matcher.HasMatch(board, colourToMove, N, boardCentre, boardCentre);
+        return matcher.HasMatch(board, colourToMove, N, boardCentreLoc);
     }
 
     bool StartsWith(const std::string& str, const std::string& sub) const

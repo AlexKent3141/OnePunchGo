@@ -9,7 +9,9 @@
 class BoardSpiral
 {
 public:
-    BoardSpiral() = delete;
+    BoardSpiral()
+    {
+    }
 
     BoardSpiral(int n)
     {

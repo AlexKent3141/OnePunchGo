@@ -1,4 +1,5 @@
 #include "CommsHandler.h"
+#include "Patterns/PatternMatcher.h"
 #include "Tests/TestRunner.h"
 #include "Tests/MakeMoveTest.h"
 #include "Tests/KoDetectionTest.h"
@@ -10,6 +11,8 @@
 
 int main(int argc, char* argv[])
 {
+    PatternMatcher::Load("test3.pat", 3);
+
     if (argc == 2 && std::string(argv[1]) == "test")
     {
         // Execute the unit tests.
@@ -32,6 +35,8 @@ int main(int argc, char* argv[])
         std::string message;
         while (std::getline(std::cin, message) && handler.Process(message));
     }
+
+    PatternMatcher::CleanUp();
 
     return 0;
 }

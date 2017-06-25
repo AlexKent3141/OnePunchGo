@@ -3,6 +3,7 @@
 
 #include "Pattern.h"
 #include "PatternState.h"
+#include "BoardSpiral.h"
 #include "../Board.h"
 #include <vector>
 
@@ -16,9 +17,9 @@ public:
     static void CleanUp();
 
     // Check whether there is a matching nxn pattern for the specified board location.
-    bool HasMatch(const Board& board, int patternSize, int row, int col) const;
+    bool HasMatch(const Board& board, int patternSize, int loc) const;
     
-    bool HasMatch(const Board& board, Colour colourToMove, int patternSize, int row, int col) const;
+    bool HasMatch(const Board& board, Colour colourToMove, int patternSize, int loc) const;
 
 private:
     // Store the patterns for each pattern size.
@@ -26,6 +27,12 @@ private:
 
     // The root states for the matcher for each pattern size.
     static PatternState* _roots;
+
+    // Board spirals for each pattern size.
+    static BoardSpiral* _boardSpirals;
+
+    // Initialise the board spirals.
+    static void InitialiseSpirals();
 
     // Load the nxn patterns from the source file.
     static void LoadPatterns(const std::string& source, size_t n);

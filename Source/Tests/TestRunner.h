@@ -18,8 +18,6 @@ public:
         static_assert(std::is_base_of<TestBase, TestType>::value, "Not a test type.");
         auto test = TestType();
 
-        test.OneTimeSetup();
-
         std::string testsPath = test.TestFileName();
         
         // Parse the tests file and process the test cases.
@@ -48,8 +46,6 @@ public:
                 lines.push_back(line);
             }
         }
-
-        test.OneTimeCleanup();
     }
 
 private:
