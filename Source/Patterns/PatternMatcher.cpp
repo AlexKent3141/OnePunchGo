@@ -11,8 +11,8 @@ BoardSpiral* PatternMatcher::_boardSpirals = nullptr;
 
 void PatternMatcher::Load(const std::string& source, size_t n)
 {
-    if (_patterns == nullptr) _patterns = new std::vector<Pattern*>[MaxPatternSize];
-    if (_roots == nullptr) _roots = new PatternState[MaxPatternSize];
+    if (_patterns == nullptr) _patterns = new std::vector<Pattern*>[MaxPatternSize+1];
+    if (_roots == nullptr) _roots = new PatternState[MaxPatternSize+1];
     if (_boardSpirals == nullptr) InitialiseSpirals();
 
     if (_patterns[n].size() == 0)
@@ -88,8 +88,8 @@ bool PatternMatcher::HasMatch(const Board& board, Colour colourToMove, int patte
 
 void PatternMatcher::InitialiseSpirals()
 {
-    _boardSpirals = new BoardSpiral[MaxPatternSize];
-    for (int i = 3; i < MaxPatternSize; i++)
+    _boardSpirals = new BoardSpiral[MaxPatternSize+1];
+    for (int i = 3; i <= MaxPatternSize; i++)
     {
         _boardSpirals[i] = BoardSpiral(i);
     }
@@ -100,9 +100,10 @@ void PatternMatcher::LoadPatterns(const std::string& source, size_t n)
 {
     std::ifstream s(source);
     std::string line, currentPattern;
+    size_t lineNo = 0;
     while (std::getline(s, line))
     {
-        if (line.size() >= n)
+        if (lineNo > 0 && lineNo < n+1)
         {
             // Append to the current pattern.
             currentPattern += line.substr(0, n);
@@ -115,6 +116,8 @@ void PatternMatcher::LoadPatterns(const std::string& source, size_t n)
             _patterns[n].insert(_patterns[n].end(), mirrors.begin(), mirrors.end());
             currentPattern = "";
         }
+
+        lineNo = (lineNo+1) % (n+2);
     }
 
     s.close();

@@ -19,6 +19,8 @@ private:
     const double CaptureScore = 10;
     const double AtariScore = 5;
     const double SelfAtariScore = -10;
+    const double Pat3MatchScore = 1;
+    const double Pat5MatchScore = 2;
 
     // Calculate a prior score for the move in order to bias the search.
     double Prior(const Move& move) const
@@ -28,6 +30,8 @@ private:
         if (info & Capture) score += CaptureScore;
         if (info & Atari) score += AtariScore;
         if (info & SelfAtari) score += SelfAtariScore;
+        if (info & Pat3Match) score += Pat3MatchScore;
+        if (info & Pat5Match) score += Pat5MatchScore;
 
         return score;
     }

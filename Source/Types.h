@@ -21,5 +21,6 @@ const MoveInfo Save = 1 << 6;
 const MoveInfo Capture = 1 << 7;
 const MoveInfo FillsEye = 1 << 8;
 const MoveInfo Pat3Match = 1 << 9;
+const MoveInfo Pat5Match = 1 << 10;
 
 #endif // __TYPES_H__

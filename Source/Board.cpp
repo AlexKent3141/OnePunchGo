@@ -1,4 +1,5 @@
 #include "Board.h"
+#include "Patterns/PatternMatcher.h"
 
 Board::Board(int boardSize)
 {
@@ -142,11 +143,25 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
     std::vector<Move> moves;
     if (!GameOver())
     {
+        PatternMatcher matcher;
         for (int i = 0; i < _boardArea; i++)
         {
             MoveInfo info = CheckMove(i);
             if (info & Legal)
             {
+                if (!duringPlayout)
+                {
+                    if (matcher.HasMatch(*this, 3, i))
+                    {
+                        info |= Pat3Match;
+                    }
+
+                    if (matcher.HasMatch(*this, 5, i))
+                    {
+                        info |= Pat5Match;
+                    }
+                }
+
                 if (!duringPlayout || !(info & FillsEye))
                 {
                     moves.push_back({this->_colourToMove, i, info});
