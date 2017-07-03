@@ -2,6 +2,7 @@
 #define __COMMS_HANDLER_H__
 
 #include "MoveHistory.h"
+#include "TimeInfo.h"
 #include <string>
 
 // This class processes incoming messages.
@@ -21,7 +22,9 @@ public:
         "komi",
         "play",
         "genmove",
-        "undo"
+        "undo",
+        "time_settings",
+        "time_left"
     };
 
     bool Process(const std::string&);
@@ -30,6 +33,7 @@ private:
     const int NoID = -1;
     MoveHistory _history;
     unsigned int _boardSize;
+    TimeInfo _timeInfos[2];
 
     std::string PreProcess(const std::string&) const;
 

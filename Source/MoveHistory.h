@@ -11,6 +11,8 @@ class MoveHistory
 public:
     inline std::vector<Move> Moves() const { return _history; }
 
+    inline size_t Size() const { return _history.size(); }
+
     // Add a move to the history.
     void AddMove(const Move& move)
     {

@@ -110,7 +110,10 @@ bool CommsHandler::Process(const std::string& message)
             Search<UCBPriors, BestOf<4>> search;
             search.Start(board);
 
-            std::chrono::seconds searchTime(5);
+            const TimeInfo& timeInfo = _timeInfos[(int)col-1];
+            int timeForMove = timeInfo.TimeForMove(_boardSize, _history.Size());
+            Log("TimeForMove: " + std::to_string(timeForMove));
+            std::chrono::milliseconds searchTime(timeForMove);
             std::this_thread::sleep_for(searchTime);
             search.Stop();
 
@@ -141,6 +144,24 @@ bool CommsHandler::Process(const std::string& message)
         else if (command == "undo")
         {
             _history.UndoLast();
+            SuccessResponse(id, "");
+        }
+        else if (command == "time_settings")
+        {
+            int mainTime = stoi(tokens[i]);
+            int byoyomiTime = stoi(tokens[i+1]);
+            int byoyomiStones = stoi(tokens[i+2]);
+            _timeInfos[0] = TimeInfo(mainTime, byoyomiTime, byoyomiStones);
+            _timeInfos[1] = TimeInfo(mainTime, byoyomiTime, byoyomiStones);
+            SuccessResponse(id, "");
+        }
+        else if (command == "time_left")
+        {
+            std::string colString = Utils::GetInstance()->ToLower(tokens[i]);
+            Colour col = colString == "black" || colString == "b" ? Black : White;
+            int timeLeft = stoi(tokens[i+1]);
+            int stonesLeft = stoi(tokens[i+2]);
+            _timeInfos[(int)col-1].TimeLeft(timeLeft, stonesLeft);
             SuccessResponse(id, "");
         }
         else
