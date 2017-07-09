@@ -11,11 +11,21 @@ struct MoveStats
     int Visits;
     int Wins;
 
+    int RaveVisits;
+    int RaveWins;
+
     // Update with the new score.
     void UpdateScore(int score)
     {
         ++Visits;
         Wins += LastMove.Col == Black ? score : -score;
+    }
+
+    // Update the rave score.
+    void UpdateRaveScore(int score)
+    {
+        ++RaveVisits;
+        RaveWins += LastMove.Col == Black ? score : -score;
     }
 
     // Get the probability of winning for this node.

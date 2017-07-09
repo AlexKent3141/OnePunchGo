@@ -55,9 +55,12 @@ private:
         Node* root = MakeRoot();
         root->Moves = pos.GetMoves();
 
+        int boardSize = pos.Size();
+        int boardArea = boardSize*boardSize;
         Board temp(pos.Size());
         _treeSize = 0;
         _stop = false;
+        int playoutMoves[boardArea];
         while (!_stop)
         {
             // Clone the board state.
@@ -66,14 +69,17 @@ private:
             // Find the leaf node which must be expanded.
             Node* leaf = Select(temp, root);
 
+            Colour selectedPlayer = leaf->Stats.LastMove.Col;
+
             // Expand the leaf node.
             leaf = Expand(temp, leaf);
 
             // Perform a playout and record the result.
-            int res = Simulate(temp);
+            memset(playoutMoves, -1, boardArea*sizeof(int));
+            int res = Simulate(temp, playoutMoves);
 
             // Backpropagate the scores.
-            UpdateScores(leaf, res);
+            UpdateScores(leaf, selectedPlayer, playoutMoves, res);
 
             ++_treeSize;
         }
@@ -121,25 +127,49 @@ private:
     }
 
     // Perform a simulation from the specified game state.
-    int Simulate(Board& temp)
+    int Simulate(Board& temp, int* playoutMoves)
     {
         // Make moves according to the playout policy until a terminal state is reached.
+        int turnNo = 0;
         Move move;
         while ((move = _pp.Select(temp)) != BadMove)
         {
+            if ((turnNo & 1) && move.Coord != PassCoord && playoutMoves[move.Coord] == -1)
+                playoutMoves[move.Coord] = turnNo;
+
             temp.MakeMove(move);
+            ++turnNo;
         }
 
         return temp.Score();
     }
 
     // Backpropagate the score from the simulation up the tree.
-    void UpdateScores(Node* leaf, int score) const
+    void UpdateScores(Node* leaf, Colour selectedPlayer, int* playoutMoves, int score) const
     {
         while (leaf != nullptr)
         {
-            leaf->Stats.UpdateScore(score);
+            MoveStats& stats = leaf->Stats;
+            if (stats.LastMove.Col == selectedPlayer)
+            {
+                RaveUpdate(leaf, playoutMoves, score);
+            }
+
+            stats.UpdateScore(score);
             leaf = leaf->Parent;
+        }
+    }
+
+    void RaveUpdate(Node* node, int* playoutMoves, int score) const
+    {
+        for (Node* child : node->Children)
+        {
+            MoveStats& stats = child->Stats;
+            int coord = stats.LastMove.Coord;
+            if (coord != PassCoord && playoutMoves[coord] != -1)
+            {
+                stats.UpdateRaveScore(score);
+            }
         }
     }
 };
