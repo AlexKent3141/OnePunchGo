@@ -24,7 +24,8 @@ public:
         "genmove",
         "undo",
         "time_settings",
-        "time_left"
+        "time_left",
+        "opg_parameters"
     };
 
     bool Process(const std::string&);

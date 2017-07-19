@@ -16,7 +16,7 @@ class GameParameters:
 
 # This class wraps up a single instance of OPG (or in fact and GTP compatible Go AI).
 class AIProcess:
-    COMMANDS = ["boardsize", "clear_board", "komi", "time_settings", "quit", "play", "genmove"]
+    COMMANDS = ["boardsize", "clear_board", "komi", "time_settings", "quit", "play", "genmove", "opg_parameters"]
 
     def __init__(self, path):
         self.path = path

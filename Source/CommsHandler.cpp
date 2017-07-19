@@ -1,5 +1,6 @@
 #include "Board.h"
 #include "CommsHandler.h"
+#include "CustomParameters.h"
 #include "Globals.h"
 #include "Move.h"
 #include "Rules.h"
@@ -162,6 +163,16 @@ bool CommsHandler::Process(const std::string& message)
             int timeLeft = stoi(tokens[i+1]);
             int stonesLeft = stoi(tokens[i+2]);
             _timeInfos[(int)col-1].TimeLeft(timeLeft, stonesLeft);
+            SuccessResponse(id, "");
+        }
+        else if (command == "opg_parameters")
+        {
+            auto params = CustomParameters::GetInstance();
+            for (size_t j = i; j < tokens.size(); j++)
+            {
+                params->AddParameter(stof(tokens[j]));
+            }
+
             SuccessResponse(id, "");
         }
         else
