@@ -22,6 +22,13 @@ class AIProcess:
         self.path = path
         self.proc = None
 
+    def send_custom(self, parameters):
+        if not self.proc:
+            self.proc = pexpect.spawn(self.path)
+
+        params = ' '.join([str(p) for p in parameters])
+        self.proc.sendline("opg_parameters " + params)
+
     def new_game(self, game_params):
         if not self.proc:
             self.proc = pexpect.spawn(self.path)
@@ -53,11 +60,23 @@ class AIProcess:
 
         return best_move.strip("=").strip()
 
+def Play(path1, path2, game_params):
+    ai1 = AIProcess(path1)
+    ai2 = AIProcess(path2)
+    return PlayAI(ai1, ai2, game_params)
+
+def PlayCustom(path1, path2, game_params, custom_params1, custom_params2):
+    ai1 = AIProcess(path1)
+    ai2 = AIProcess(path2)
+    ai1.send_custom(custom_params1)
+    ai2.send_custom(custom_params2)
+    return PlayAI(ai1, ai2, game_params)
+
 # Play a game between two AI programs with the specified game parameters.
 # Return the index (0 or 1) of the winning program.
 # If the winner was not clear then return -1.
-def Play(path1, path2, game_params):
-    ais = [AIProcess(path1), AIProcess(path2)]
+def PlayAI(ai1, ai2, game_params):
+    ais = [ai1, ai2]
     for ai in ais:
         ai.new_game(game_params)
 
@@ -70,7 +89,6 @@ def Play(path1, path2, game_params):
         opponent = ais[1 - turn_number % 2]
         col = colours[turn_number % 2]
         move = player.get_move(col)
-        print move
 
         opponent.add_move(col + " " + move)
 
@@ -85,6 +103,9 @@ def Play(path1, path2, game_params):
             
         turn_number += 1
 
+    for ai in ais:
+        ai.quit()
+
     # The game has terminated and it *should* be obvious who won! (i.e. a player resigned).
     winner = -1
     if num_passes != 2:
@@ -93,6 +114,6 @@ def Play(path1, path2, game_params):
     return winner
 
 if __name__ == "__main__":
-    ai = "Source/OPG.out"
+    ai = "../OPG.out"
     params = GameParameters(9, 7.5, 1)
     print Play(ai, ai, params)
