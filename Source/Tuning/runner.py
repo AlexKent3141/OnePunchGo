@@ -26,8 +26,9 @@ class AIProcess:
         if not self.proc:
             self.proc = pexpect.spawn(self.path)
 
-        params = ' '.join([str(p) for p in parameters])
-        self.proc.sendline("opg_parameters " + params)
+        if len(parameters) > 0:
+            params = ' '.join([str(p) for p in parameters])
+            self.proc.sendline("opg_parameters " + params)
 
     def new_game(self, game_params):
         if not self.proc:
