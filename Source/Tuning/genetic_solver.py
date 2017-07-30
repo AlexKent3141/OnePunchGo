@@ -1,5 +1,5 @@
 import random
-from chromosone_factory import *
+from solution_generator import *
 
 # This class wraps up the parameters for controlling a genetic algorithm.
 class GeneticParams:
@@ -13,15 +13,15 @@ class GeneticSolver:
     # Parameters are: GeneticParams, ChromosoneFactory, assessor function for chromosones.
     # The assessor function accepts a list of chromosones and returns a list of fitnesses.
     # The optional "on_best" method is called when a new best chromosone is found.
-    def __init__(self, gps, cf, assessor, on_best=None):
+    def __init__(self, gps, sg, assessor, on_best=None):
         self.gps = gps
-        self.cf = cf
+        self.sg = sg
         self.assessor = assessor
         self.on_best = on_best
 
     # Start the solver.
     def solve(self, max_steps):
-        pop = [self.cf.random_chromosone() for i in range(self.gps.pop_size)]
+        pop = [self.sg.random_solution() for i in range(self.gps.pop_size)]
         for i in range(max_steps):
             print "Generation:", i
             pop = self.evolve(pop)
@@ -70,5 +70,5 @@ class GeneticSolver:
         for i in range(len(c)):
             r = random.random()
             if r < self.gps.mr:
-                c[i] = self.cf.random_base(i)
+                c[i] = self.sg.random_component(i)
         return c
