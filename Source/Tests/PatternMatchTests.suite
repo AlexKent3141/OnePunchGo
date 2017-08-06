@@ -14,13 +14,14 @@ Result:
 B True
 End
 
-# .B.
 # ...
-# .W.
+# ...
+# WWW
 Begin: No match 1
 Moves:
-B B3
+W A1
 W B1
+W C1
 Result:
 B False
 End

@@ -11,7 +11,7 @@
 
 int main(int argc, char* argv[])
 {
-    PatternMatcher::Load("pat3.txt", 3);
+    PatternMatcher::Load("pat3_v1.txt", 3);
     PatternMatcher::Load("pat5.txt", 5);
 
     if (argc == 2 && std::string(argv[1]) == "test")
