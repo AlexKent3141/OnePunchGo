@@ -96,6 +96,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         size_t capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
         size_t friendlyNeighbours = 0;
         bool friendInAtari = false;
+        bool isAtari = false;
         for (const Point* const n : pt.Neighbours)
         {
             if (n->Col == None)
@@ -118,7 +119,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
                 }
                 else if (n->Liberties == 2)
                 {
-                    res |= Atari;
+                    isAtari = true;
                 }
             }
         }
@@ -127,11 +128,15 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         bool repetition = capturesWithRepetition == 1 && IsKoRepetition(col, loc, captureLoc);
         res = suicide ? Suicide : repetition ? Ko : Legal;
 
-        // Do some extra work to further classify the move.
-        if (liberties == 1) res |= SelfAtari;
-        if (capturesWithRepetition > 0) res |= Capture;
-        if (friendlyNeighbours == pt.Neighbours.size()) res |= FillsEye;
-        if (friendInAtari && liberties > 1) res |= Save;
+        if (res & Legal)
+        {
+            // Do some extra work to further classify the move.
+            if (isAtari) res |= Atari;
+            if (liberties == 1) res |= SelfAtari;
+            if (capturesWithRepetition > 0) res |= Capture;
+            if (friendlyNeighbours == pt.Neighbours.size()) res |= FillsEye;
+            if (friendInAtari && liberties > 1) res |= Save;
+        }
     }
 
     return res;
