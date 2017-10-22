@@ -6,7 +6,7 @@
 #include "Rules.h"
 #include "Search.h"
 #include "Utils.h"
-#include "Selection/UCBPriors.h"
+#include "Selection/UCB1.h"
 #include "Playout/Uniform.h"
 #include "Playout/BestOf.h"
 #include <cctype>
@@ -108,7 +108,7 @@ bool CommsHandler::Process(const std::string& message)
             Log(board.ToString());
 
             // Search for a fixed amount of time.
-            Search<UCBPriors, BestOf<4>> search;
+            Search<UCB1, BestOf<4>> search;
             search.Start(board);
 
             const TimeInfo& timeInfo = _timeInfos[(int)col-1];
