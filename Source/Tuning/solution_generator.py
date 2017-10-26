@@ -20,6 +20,19 @@ class SolutionGenerator:
             tokens = l.split(":")
             self.constraints.append([float(tokens[0]), float(tokens[1])])
 
+    def num_parameters(self):
+        return len(self.constraints)
+
+    def parameter_middle(self, p):
+        constraint = self.constraints[p]
+        return sum(constraint) / 2
+
+    def parameter_range(self, p, c, i):
+        constraint = self.constraints[p]
+        r = constraint[1] - constraint[0]
+        r /= (i + 1)
+        return [c - r/2, c + r/2]
+
     # Generate a random candidate solution.
     def random_solution(self):
         chrom = []
