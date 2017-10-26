@@ -33,6 +33,12 @@ public:
     {
         return Next() % bound;
     }
+
+    // Generate a pseudo-random double 0 <= x <= 1.
+    double NextDouble()
+    {
+        return (double)Next() / std::numeric_limits<uint64_t>::max();
+    }
     
 private:
     uint64_t _s;

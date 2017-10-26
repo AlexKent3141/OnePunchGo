@@ -7,8 +7,10 @@
 #include "../Node.h"
 #include "../Playout/Uniform.h"
 #include "../Playout/BestOf.h"
+#include "../Playout/BiasedBestOf.h"
 #include "../Search.h"
 #include "../Selection/UCBPriors.h"
+#include "../Selection/UCB1.h"
 #include "../Utils.h"
 #include <cassert>
 #include <chrono>
@@ -42,7 +44,7 @@ private:
         Board board(boardSize);
 
         // Spawn a searching thread for this position.
-        Search<UCBPriors, BestOf<4>> search;
+        Search<UCB1, BiasedBestOf<4>> search;
         search.Start(board);
 
         // Allow the search to continue for the specified duration.
