@@ -20,7 +20,7 @@ public:
 
         Move bestMove = BadMove;
         std::vector<Move> selection;
-        if (_gen.NextDouble() < 0.5)
+        if (_gen.NextDouble() < 0.45)
         {
             selection = GetMatches(moves, Capture);
             if (!selection.empty())
@@ -29,7 +29,7 @@ public:
             }
         }
 
-        if (_gen.NextDouble() < 0.5)
+        if (_gen.NextDouble() < 0.55)
         {
             selection = GetMatches(moves, Save);
             if (!selection.empty())
