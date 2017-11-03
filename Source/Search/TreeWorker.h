@@ -1,32 +1,53 @@
-#ifndef __SEARCH_H__
-#define __SEARCH_H__
+#ifndef __TREE_WORKER_H__
+#define __TREE_WORKER_H__
 
-#include "Board.h"
+#include "../Board.h"
 #include "Node.h"
-#include "Playout/PlayoutPolicy.h"
-#include "Selection/SelectionPolicy.h"
+#include "../Playout/PlayoutPolicy.h"
+#include "../Selection/SelectionPolicy.h"
+#include "../RandomGenerator.h"
 #include <mutex>
 #include <thread>
 
-// This class performs executes the MCTS algorithm to find the best move.
-// The template parameters are:
-// SP: The selection policy to be used.
-// PP: The playout policy to be used.
+// This class performs the MCTS algorithm to find the best move.
+// It contains the code that is executed by each worker thread.
 template<class SP, class PP>
-class Search
+class TreeWorker
 {
-static_assert(std::is_base_of<SelectionPolicy, SP>::value, "Not a valid selection policy.");
-static_assert(std::is_base_of<PlayoutPolicy, PP>::value, "Not a valid playout policy.");
 public:
-    inline MoveStats Best() const { return _best; }
+    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen)
+    {
+        _root = root;
+        _gen = gen;
+        _sp = new SP();
+        _pp = new PP();
+    }
 
-    inline int TreeSize() const { return _treeSize; }
+    ~TreeWorker()
+    {
+        if (_gen != nullptr)
+        {
+            delete _gen;
+            _gen = nullptr;
+        }
+
+        if (_sp != nullptr)
+        {
+            delete _sp;
+            _sp = nullptr;
+        }
+        
+        if (_pp != nullptr)
+        {
+            delete _pp;
+            _pp = nullptr;
+        }
+    }
 
     // Start a searching thread.
-    // TODO: Generalise to multiple searching threads.
-    void Start(const Board& pos)
+    void Start()
     {
-        std::thread worker([&] { DoSearch(pos); });
+        std::thread worker([&] { DoSearch(); });
         worker.detach();
     }
 
@@ -41,10 +62,10 @@ public:
 
 private:
     bool _stop = false;
-    SP _sp;
-    PP _pp;
-    MoveStats _best;
-    int _treeSize;
+    Node* _root = nullptr;
+    SP* _sp = nullptr;
+    PP* _pp = nullptr;
+    RandomGenerator* _gen = nullptr;
     std::mutex _mtx;
 
     // This method keeps searching until a call to Stop is made.
@@ -52,8 +73,7 @@ private:
     {
         std::unique_lock<std::mutex> lock(_mtx);
 
-        Node* root = MakeRoot();
-        root->Moves = pos.GetMoves();
+        _root->Moves = pos.GetMoves();
 
         int boardSize = pos.Size();
         int boardArea = boardSize*boardSize;
@@ -174,4 +194,4 @@ private:
     }
 };
 
-#endif // __SEARCH_H__
+#endif // __TREE_WORKER_H__

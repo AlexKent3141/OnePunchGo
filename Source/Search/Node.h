@@ -1,7 +1,7 @@
 #ifndef __NODE_H__
 #define __NODE_H__
 
-#include "Move.h"
+#include "./Move.h"
 #include <cassert>
 
 // The statistics for the move.
