@@ -7,6 +7,7 @@
 #include "Search.h"
 #include "Utils.h"
 #include "Selection/UCB1.h"
+#include "Selection/UCBPriors.h"
 #include "Playout/Uniform.h"
 #include "Playout/BestOf.h"
 #include "Playout/BiasedBestOf.h"
@@ -109,7 +110,7 @@ bool CommsHandler::Process(const std::string& message)
             Log(board.ToString());
 
             // Search for a fixed amount of time.
-            Search<UCB1, BiasedBestOf<4>> search;
+            Search<UCBPriors, BiasedBestOf<4>> search;
             search.Start(board);
 
             const TimeInfo& timeInfo = _timeInfos[(int)col-1];
