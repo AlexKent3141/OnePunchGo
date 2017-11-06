@@ -4,12 +4,7 @@
 #include "TestBase.h"
 #include "../Board.h"
 #include "../Move.h"
-#include "../Node.h"
-#include "../Playout/Uniform.h"
-#include "../Playout/BestOf.h"
-#include "../Playout/BiasedBestOf.h"
-#include "../Search.h"
-#include "../Selection/UCB1.h"
+#include "../Current.h"
 #include <chrono>
 #include <iostream>
 
@@ -68,7 +63,7 @@ private:
         // Spawn a searching thread for this position.
         // Note: The UCB1 algorithm is used for this as it seems to perform better in these
         // restricted scenarios.
-        Search<UCB1, BiasedBestOf<4>> search;
+        CurrentSearch search;
         search.Start(board);
 
         // Allow the search to continue for 5 seconds.

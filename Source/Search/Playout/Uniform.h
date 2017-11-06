@@ -2,7 +2,7 @@
 #define __UNIFORM_PLAYOUT_POLICY_H__
 
 #include "PlayoutPolicy.h"
-#include "../RandomGenerator.h"
+#include "../../RandomGenerator.h"
 
 class Uniform : public PlayoutPolicy
 {

@@ -12,7 +12,10 @@ protected:
     {
         const MoveStats& stats = n->Stats;
 
-        double priorTerm = Prior(stats.LastMove) / stats.Visits;
+        double priorTerm = 0;
+        if (stats.Visits > 0)
+            priorTerm = Prior(stats.LastMove) / stats.Visits;
+
         return priorTerm + UCB1::Policy(n);
     }
 

@@ -44,7 +44,7 @@ protected:
     // Calculate the exploration term.
     double ExplorationTerm(int visits, int parentVisits) const
     {
-        return sqrt(N*log(parentVisits) / (100.0*visits));
+        return  sqrt(N*log(parentVisits) / (100.0*visits));
     }
 };
 

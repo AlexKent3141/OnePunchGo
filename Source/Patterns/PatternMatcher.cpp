@@ -36,6 +36,12 @@ void PatternMatcher::CleanUp()
         delete[] _roots;
         _roots = nullptr;
     }
+
+    if (_boardSpirals != nullptr)
+    {
+        delete[] _boardSpirals;
+        _boardSpirals = nullptr;
+    }
 }
 
 // Check whether the specified location on the board matches one of the nxn patterns.

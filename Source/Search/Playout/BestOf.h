@@ -2,7 +2,7 @@
 #define __BEST_OF_N_PLAYOUT_POLICY_H__
 
 #include "PlayoutPolicy.h"
-#include "../RandomGenerator.h"
+#include "../../RandomGenerator.h"
 #include <cfloat>
 
 // Best-of-N playout policy.

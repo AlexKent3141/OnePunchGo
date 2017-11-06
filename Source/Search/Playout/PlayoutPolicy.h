@@ -1,7 +1,7 @@
 #ifndef __PLAYOUT_POLICY_H__
 #define __PLAYOUT_POLICY_H__
 
-#include "../Board.h"
+#include "../../Board.h"
 #include <vector>
 
 // A playout policy defines a method which attempts to select the most promising move during

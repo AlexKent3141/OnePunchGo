@@ -3,8 +3,8 @@
 
 #include "../Board.h"
 #include "Node.h"
-#include "../Playout/PlayoutPolicy.h"
-#include "../Selection/SelectionPolicy.h"
+#include "Playout/PlayoutPolicy.h"
+#include "Selection/SelectionPolicy.h"
 #include "../RandomGenerator.h"
 #include <mutex>
 #include <thread>
@@ -15,8 +15,9 @@ template<class SP, class PP>
 class TreeWorker
 {
 public:
-    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen)
+    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen, std::mutex* expandLock) : _pos(&pos)
     {
+        _expandLock = expandLock;
         _root = root;
         _gen = gen;
         _sp = new SP();
@@ -47,6 +48,7 @@ public:
     // Start a searching thread.
     void Start()
     {
+        _stop = false;
         std::thread worker([&] { DoSearch(); });
         worker.detach();
     }
@@ -66,33 +68,26 @@ private:
     SP* _sp = nullptr;
     PP* _pp = nullptr;
     RandomGenerator* _gen = nullptr;
+    Board const* _pos;
     std::mutex _mtx;
+    std::mutex* _expandLock;
 
     // This method keeps searching until a call to Stop is made.
-    void DoSearch(const Board& pos)
+    void DoSearch()
     {
         std::unique_lock<std::mutex> lock(_mtx);
 
-        _root->Moves = pos.GetMoves();
-
-        int boardSize = pos.Size();
+        int boardSize = _pos->Size();
         int boardArea = boardSize*boardSize;
-        Board temp(pos.Size());
-        _treeSize = 0;
-        _stop = false;
+        Board temp(_pos->Size());
         int playoutMoves[boardArea];
         while (!_stop)
         {
             // Clone the board state.
-            temp.CloneFrom(pos);
+            temp.CloneFrom(*_pos);
 
-            // Find the leaf node which must be expanded.
-            Node* leaf = Select(temp, root);
-
-            Colour selectedPlayer = leaf->Stats.LastMove.Col;
-
-            // Expand the leaf node.
-            leaf = Expand(temp, leaf);
+            Colour selectedPlayer;
+            Node* leaf = SelectNode(temp, selectedPlayer);
 
             // Perform a playout and record the result.
             memset(playoutMoves, -1, boardArea*sizeof(int));
@@ -100,23 +95,22 @@ private:
 
             // Backpropagate the scores.
             UpdateScores(leaf, selectedPlayer, playoutMoves, res);
-
-            ++_treeSize;
         }
+    }
 
-        // Find the most promising move.
-        int highestVisits = -1;
-        for (size_t i = 0; i < root->Children.size(); i++)
-        {
-            Node const* const child = root->Children[i];
-            if (child->Stats.Visits > highestVisits)
-            {
-                highestVisits = child->Stats.Visits;
-                _best = child->Stats;
-            }
-        }
+    Node* SelectNode(Board& temp, Colour& selectedPlayer)
+    {
+        std::lock_guard<std::mutex> lk(*_expandLock);
 
-        delete root;
+        // Find the leaf node which must be expanded.
+        Node* leaf = Select(temp, _root);
+
+        selectedPlayer = leaf->Stats.LastMove.Col;
+
+        // Expand the leaf node.
+        leaf = Expand(temp, leaf);
+
+        return leaf;
     }
 
     // Select a node to expand.
@@ -125,7 +119,7 @@ private:
         Node* current = root;
         while (current->FullyExpanded() && current->HasChildren())
         {
-            current = _sp.Select(current->Children);
+            current = _sp->Select(current->Children);
             temp.MakeMove(current->Stats.LastMove);
         }
 
@@ -143,6 +137,8 @@ private:
             expanded->Moves = temp.GetMoves();
         }
 
+        AddVirtualLoss(expanded);
+
         return expanded;
     }
 
@@ -152,7 +148,7 @@ private:
         // Make moves according to the playout policy until a terminal state is reached.
         int turnNo = 0;
         Move move;
-        while ((move = _pp.Select(temp)) != BadMove)
+        while ((move = _pp->Select(temp)) != BadMove)
         {
             if ((turnNo & 1) && move.Coord != PassCoord && playoutMoves[move.Coord] == -1)
                 playoutMoves[move.Coord] = turnNo;
@@ -164,11 +160,20 @@ private:
         return temp.Score();
     }
 
+    void AddVirtualLoss(Node* leaf) const
+    {
+        leaf->Stats.Visits++;
+        leaf->Stats.Wins--;
+    }
+
     // Backpropagate the score from the simulation up the tree.
     void UpdateScores(Node* leaf, Colour selectedPlayer, int* playoutMoves, int score) const
     {
+        std::lock_guard<std::mutex> lk(*_expandLock);
+
         while (leaf != nullptr)
         {
+            //std::lock_guard<std::mutex> lk(leaf->m);
             MoveStats& stats = leaf->Stats;
             if (stats.LastMove.Col == selectedPlayer)
             {

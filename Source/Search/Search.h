@@ -3,9 +3,10 @@
 
 #include "../Board.h"
 #include "Node.h"
-#include "../Playout/PlayoutPolicy.h"
-#include "../Selection/SelectionPolicy.h"
+#include "Playout/PlayoutPolicy.h"
+#include "Selection/SelectionPolicy.h"
 #include "../RandomGenerator.h"
+#include "TreeWorker.h"
 #include <mutex>
 #include <thread>
 
@@ -26,6 +27,9 @@ public:
             delete _root;
             _root = nullptr;
         }
+
+        for (TreeWorker<SP, PP>* worker : _workers) delete worker;
+        _workers.clear();
     }
 
     inline MoveStats Best() const { return _best; }
@@ -47,10 +51,11 @@ public:
         for (TreeWorker<SP, PP>* worker : _workers) delete worker;
         _workers.clear();
 
+        std::mutex expandLock;
         for (int i = 0; i < NumWorkers; i++)
         {
             auto gen = new RandomGenerator(seeder.Next());
-            _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen));
+            _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen, &expandLock));
         }
 
         // Start the workers.
@@ -65,14 +70,30 @@ public:
     }
 
 private:
-    const int NumWorkers = 2;
+    const int NumWorkers = 8;
 
     bool _stop = false;
     Node* _root = nullptr;
     std::vector<TreeWorker<SP, PP>*> _workers;
 
+    int _treeSize = 0;
+    MoveStats _best;
+
     void CollateResults()
     {
+        // Find the most promising move.
+        int highestVisits = -1;
+        for (size_t i = 0; i < _root->Children.size(); i++)
+        {
+            Node const* const child = _root->Children[i];
+            if (child->Stats.Visits > highestVisits)
+            {
+                highestVisits = child->Stats.Visits;
+                _best = child->Stats;
+            }
+
+            _treeSize += child->Stats.Visits;
+        }
     }
 };
 

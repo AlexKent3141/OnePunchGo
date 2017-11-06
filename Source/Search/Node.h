@@ -1,8 +1,9 @@
 #ifndef __NODE_H__
 #define __NODE_H__
 
-#include "./Move.h"
+#include "../Move.h"
 #include <cassert>
+#include <iostream>
 
 // The statistics for the move.
 struct MoveStats
@@ -53,7 +54,7 @@ struct Node
     }
 
     // Check whether the node is fully expanded.
-    bool FullyExpanded() const
+    bool FullyExpanded()// const
     {
         return Unexpanded >= Moves.size();
     }

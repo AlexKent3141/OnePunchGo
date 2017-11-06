@@ -1,16 +1,11 @@
-#include "Board.h"
 #include "CommsHandler.h"
+#include "Current.h"
+#include "Board.h"
 #include "CustomParameters.h"
 #include "Globals.h"
 #include "Move.h"
 #include "Rules.h"
-#include "Search.h"
 #include "Utils.h"
-#include "Selection/UCB1.h"
-#include "Selection/UCBPriors.h"
-#include "Playout/Uniform.h"
-#include "Playout/BestOf.h"
-#include "Playout/BiasedBestOf.h"
 #include <cctype>
 #include <algorithm>
 #include <chrono>
@@ -110,7 +105,7 @@ bool CommsHandler::Process(const std::string& message)
             Log(board.ToString());
 
             // Search for a fixed amount of time.
-            Search<UCBPriors, BiasedBestOf<4>> search;
+            CurrentSearch search;
             search.Start(board);
 
             const TimeInfo& timeInfo = _timeInfos[(int)col-1];
@@ -128,7 +123,7 @@ bool CommsHandler::Process(const std::string& message)
             Log("WinRate: " + std::to_string(winRate));
 
             const double ResignThreshold = 0.1;
-            const double PassThreshold = 0.9999;
+            const double PassThreshold = 0.99;
             if (winRate > PassThreshold)
             {
                 _history.AddMove({col, PassCoord});
