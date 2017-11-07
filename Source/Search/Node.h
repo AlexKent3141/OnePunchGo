@@ -4,6 +4,7 @@
 #include "../Move.h"
 #include <cassert>
 #include <iostream>
+#include <mutex>
 
 // The statistics for the move.
 struct MoveStats
@@ -44,6 +45,7 @@ struct Node
     Node* Parent;
     std::vector<Move> Moves; // The moves that are available.
     std::vector<Node*> Children; // The child nodes.
+    std::mutex _m;
 
     ~Node()
     {
@@ -54,21 +56,23 @@ struct Node
     }
 
     // Check whether the node is fully expanded.
-    bool FullyExpanded()// const
+    bool FullyExpanded()
     {
+        std::lock_guard<std::mutex> lk(_m);
         return Unexpanded >= Moves.size();
     }
 
     // Check whether the node has children.
-    bool HasChildren() const
+    bool HasChildren()
     {
+        std::lock_guard<std::mutex> lk(_m);
         return Children.size() > 0;
     }
 
     // Expand the next available move.
     Node* ExpandNext()
     {
-        assert(!FullyExpanded());
+        std::lock_guard<std::mutex> lk(_m);
         Node* next = new Node;
         next->Stats = { Moves[Unexpanded++], 0, 0 };
         next->Unexpanded = 0;

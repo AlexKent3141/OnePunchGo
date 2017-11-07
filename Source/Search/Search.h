@@ -1,6 +1,7 @@
 #ifndef __SEARCH_H__
 #define __SEARCH_H__
 
+#include "../Args.h"
 #include "../Board.h"
 #include "Node.h"
 #include "Playout/PlayoutPolicy.h"
@@ -20,6 +21,17 @@ class Search
 static_assert(std::is_base_of<SelectionPolicy, SP>::value, "Not a valid selection policy.");
 static_assert(std::is_base_of<PlayoutPolicy, PP>::value, "Not a valid playout policy.");
 public:
+    Search()
+    {
+        // Decide on how many threads to use.
+        auto args = Args::Get();
+        if (!args->TryParse("-threads", _numWorkersToUse))
+        {
+            int numCores = std::thread::hardware_concurrency();
+            _numWorkersToUse = numCores == 0 ? DefaultNumWorkers : numCores;
+        }
+    }
+
     ~Search()
     {
         if (_root != nullptr)
@@ -52,7 +64,7 @@ public:
         _workers.clear();
 
         std::mutex expandLock;
-        for (int i = 0; i < NumWorkers; i++)
+        for (int i = 0; i < _numWorkersToUse; i++)
         {
             auto gen = new RandomGenerator(seeder.Next());
             _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen, &expandLock));
@@ -70,7 +82,8 @@ public:
     }
 
 private:
-    const int NumWorkers = 8;
+    const int DefaultNumWorkers = 2;
+    int _numWorkersToUse;
 
     bool _stop = false;
     Node* _root = nullptr;
@@ -81,7 +94,7 @@ private:
 
     void CollateResults()
     {
-        // Find the most promising move.
+        // Find the most promising move and cache stats.
         int highestVisits = -1;
         for (size_t i = 0; i < _root->Children.size(); i++)
         {

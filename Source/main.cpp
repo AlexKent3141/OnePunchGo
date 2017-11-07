@@ -1,3 +1,4 @@
+#include "Args.h"
 #include "CommsHandler.h"
 #include "Patterns/PatternMatcher.h"
 #include "Tests/TestRunner.h"
@@ -14,7 +15,8 @@ int main(int argc, char* argv[])
     PatternMatcher::Load("pat3_v1.txt", 3);
     PatternMatcher::Load("pat5.txt", 5);
 
-    if (argc == 2 && std::string(argv[1]) == "test")
+    auto args = Args::Parse(argc, argv);
+    if (args->HasArg("-test"))
     {
         // Execute the unit tests.
         TestRunner runner;
@@ -23,7 +25,7 @@ int main(int argc, char* argv[])
         runner.RunTests<PatternMatchTest>();
         runner.RunTests<TsumegoTest>();
     }
-    else if (argc == 2 && std::string(argv[1]) == "perf")
+    else if (args->HasArg("-perf"))
     {
         // Execute the performance tests.
         TestRunner runner;
