@@ -15,9 +15,8 @@ template<class SP, class PP>
 class TreeWorker
 {
 public:
-    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen, std::mutex* expandLock) : _pos(&pos)
+    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen) : _pos(&pos)
     {
-        _expandLock = expandLock;
         _root = root;
         _gen = gen;
         _sp = new SP();
@@ -70,7 +69,6 @@ private:
     RandomGenerator* _gen = nullptr;
     Board const* _pos;
     std::mutex _mtx;
-    std::mutex* _expandLock;
 
     // This method keeps searching until a call to Stop is made.
     void DoSearch()
@@ -100,8 +98,6 @@ private:
 
     Node* SelectNode(Board& temp, Colour& selectedPlayer)
     {
-        std::lock_guard<std::mutex> lk(*_expandLock);
-
         // Find the leaf node which must be expanded.
         Node* leaf = Select(temp, _root);
 
@@ -119,6 +115,7 @@ private:
         Node* current = root;
         while (current->FullyExpanded() && current->HasChildren())
         {
+            std::lock_guard<std::mutex> lk(current->Obj);
             current = _sp->Select(current->Children);
             temp.MakeMove(current->Stats.LastMove);
         }
@@ -130,6 +127,7 @@ private:
     Node* Expand(Board& temp, Node* leaf) const
     {
         Node* expanded = leaf;
+        std::lock_guard<std::mutex> lk(expanded->Obj);
         if (!expanded->FullyExpanded())
         {
             expanded = expanded->ExpandNext();
@@ -169,11 +167,9 @@ private:
     // Backpropagate the score from the simulation up the tree.
     void UpdateScores(Node* leaf, Colour selectedPlayer, int* playoutMoves, int score) const
     {
-        std::lock_guard<std::mutex> lk(*_expandLock);
-
         while (leaf != nullptr)
         {
-            //std::lock_guard<std::mutex> lk(leaf->m);
+            std::lock_guard<std::mutex> lk(leaf->Obj);
             MoveStats& stats = leaf->Stats;
             if (stats.LastMove.Col == selectedPlayer)
             {

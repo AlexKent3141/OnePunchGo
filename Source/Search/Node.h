@@ -45,7 +45,7 @@ struct Node
     Node* Parent;
     std::vector<Move> Moves; // The moves that are available.
     std::vector<Node*> Children; // The child nodes.
-    std::mutex _m;
+    std::mutex Obj; // This is used to synchronise access to the node from each TreeWorker.
 
     ~Node()
     {
@@ -56,23 +56,21 @@ struct Node
     }
 
     // Check whether the node is fully expanded.
-    bool FullyExpanded()
+    bool FullyExpanded() const
     {
-        std::lock_guard<std::mutex> lk(_m);
         return Unexpanded >= Moves.size();
     }
 
     // Check whether the node has children.
-    bool HasChildren()
+    bool HasChildren() const
     {
-        std::lock_guard<std::mutex> lk(_m);
         return Children.size() > 0;
     }
 
     // Expand the next available move.
     Node* ExpandNext()
     {
-        std::lock_guard<std::mutex> lk(_m);
+        assert(!FullyExpanded());
         Node* next = new Node;
         next->Stats = { Moves[Unexpanded++], 0, 0 };
         next->Unexpanded = 0;

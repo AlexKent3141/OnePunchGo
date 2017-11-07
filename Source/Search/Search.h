@@ -63,11 +63,10 @@ public:
         for (TreeWorker<SP, PP>* worker : _workers) delete worker;
         _workers.clear();
 
-        std::mutex expandLock;
         for (int i = 0; i < _numWorkersToUse; i++)
         {
             auto gen = new RandomGenerator(seeder.Next());
-            _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen, &expandLock));
+            _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen));
         }
 
         // Start the workers.
