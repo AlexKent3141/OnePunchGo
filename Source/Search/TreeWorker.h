@@ -124,18 +124,27 @@ private:
     }
 
     // Expand the chosen leaf node.
+    // The virtual loss implementation is currently rather confusing.
+    // We need to ensure that all of the nodes we have selected are affected, which is a little
+    // awkward with the locks in place.
     Node* Expand(Board& temp, Node* leaf) const
     {
         Node* expanded = leaf;
         std::lock_guard<std::mutex> lk(expanded->Obj);
+        expanded->Stats.VirtualLoss();
+
+        if (expanded->Parent != nullptr)
+        {
+            AddVirtualLoss(expanded->Parent);
+        }
+
         if (!expanded->FullyExpanded())
         {
             expanded = expanded->ExpandNext();
             temp.MakeMove(expanded->Stats.LastMove);
             expanded->Moves = temp.GetMoves();
+            expanded->Stats.VirtualLoss();
         }
-
-        AddVirtualLoss(expanded);
 
         return expanded;
     }
@@ -158,10 +167,15 @@ private:
         return temp.Score();
     }
 
+    // Add virtual losses to the leaf and all nodes above.
     void AddVirtualLoss(Node* leaf) const
     {
-        leaf->Stats.Visits++;
-        leaf->Stats.Wins--;
+        while (leaf != nullptr)
+        {
+            std::lock_guard<std::mutex> lk(leaf->Obj);
+            leaf->Stats.VirtualLoss();
+            leaf = leaf->Parent;
+        }
     }
 
     // Backpropagate the score from the simulation up the tree.
@@ -176,6 +190,8 @@ private:
                 RaveUpdate(leaf, playoutMoves, score);
             }
 
+            // Reverse the effects of virtual losses.
+            stats.VirtualWin();
             stats.UpdateScore(score);
             leaf = leaf->Parent;
         }

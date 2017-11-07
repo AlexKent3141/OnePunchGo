@@ -16,6 +16,20 @@ struct MoveStats
     int RaveVisits;
     int RaveWins;
 
+    // Add a virtual loss.
+    void VirtualLoss()
+    {
+        ++Visits;
+        Wins += LastMove.Col == Black ? -1 : 1;
+    }
+
+    // Add a virtual win.
+    void VirtualWin()
+    {
+        --Visits;
+        Wins += LastMove.Col == Black ? 1 : -1;
+    }
+
     // Update with the new score.
     void UpdateScore(int score)
     {
