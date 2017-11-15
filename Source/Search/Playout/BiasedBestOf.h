@@ -3,7 +3,9 @@
 
 #include "PlayoutPolicy.h"
 #include "../../RandomGenerator.h"
+#include "../../Patterns/PatternMatcher.h"
 #include <cfloat>
+#include <iostream>
 
 // Best-of-N playout policy.
 template<unsigned int N>
@@ -11,7 +13,7 @@ class BiasedBestOf : public PlayoutPolicy
 {
 public:
     // Randomly select N legal moves and decide which one looks more promising.
-    Move Select(const Board& board)
+    Move Select(const Board& board, const Move& lastMove)
     {
         if (board.GameOver())
             return BadMove;
@@ -32,6 +34,15 @@ public:
         if (_gen.NextDouble() < 0.55)
         {
             selection = GetMatches(moves, Save);
+            if (!selection.empty())
+            {
+                return selection[_gen.Next(selection.size())];
+            }
+        }
+
+        if (_gen.NextDouble() < 0.55 && lastMove.Coord != PassCoord)
+        {
+            selection = GetLocals(board, moves, lastMove.Coord);
             if (!selection.empty())
             {
                 return selection[_gen.Next(selection.size())];
@@ -65,7 +76,7 @@ private:
     }
 
     // Get the moves within the list that are of a certain type.
-    std::vector<Move> GetMatches(const std::vector<Move>& moves, int moveType)
+    std::vector<Move> GetMatches(const std::vector<Move>& moves, int moveType) const
     {
         std::vector<Move> movesOfType;
         for (const Move& m : moves)
@@ -79,6 +90,32 @@ private:
         }
 
         return movesOfType;
+    }
+
+    // Get the local moves which match a 3x3 pattern.
+    std::vector<Move> GetLocals(const Board& board, const std::vector<Move>& moves, int lastCoord) const
+    {
+        std::vector<Move> locals;
+        PatternMatcher matcher;
+
+        int boardSize = board.Size();
+        int lx = lastCoord % boardSize;
+        int ly = lastCoord / boardSize;
+        for (const Move& m : moves)
+        {
+            int c = m.Coord;
+            bool local = (c == lastCoord + 1 && lx < boardSize - 1)
+                      || (c == lastCoord - 1 && lx > 0)
+                      || (c == lastCoord - boardSize && ly > 0)
+                      || (c == lastCoord + boardSize && ly < boardSize - 1);
+            
+            if (local && matcher.HasMatch(board, 3, c))
+            {
+                locals.push_back(m);
+            }
+        }
+
+        return locals;
     }
 
     Move BestOf(const Board& board, const std::vector<Move>& moves)

@@ -89,7 +89,7 @@ private:
 
             // Perform a playout and record the result.
             memset(playoutMoves, -1, boardArea*sizeof(int));
-            int res = Simulate(temp, playoutMoves);
+            int res = Simulate(temp, leaf->Stats.LastMove, playoutMoves);
 
             // Backpropagate the scores.
             UpdateScores(leaf, selectedPlayer, playoutMoves, res);
@@ -150,12 +150,12 @@ private:
     }
 
     // Perform a simulation from the specified game state.
-    int Simulate(Board& temp, int* playoutMoves)
+    int Simulate(Board& temp, const Move& lastMove, int* playoutMoves)
     {
         // Make moves according to the playout policy until a terminal state is reached.
         int turnNo = 0;
-        Move move;
-        while ((move = _pp->Select(temp)) != BadMove)
+        Move move = lastMove;
+        while ((move = _pp->Select(temp, move)) != BadMove)
         {
             if ((turnNo & 1) && move.Coord != PassCoord && playoutMoves[move.Coord] == -1)
                 playoutMoves[move.Coord] = turnNo;
