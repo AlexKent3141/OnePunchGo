@@ -78,46 +78,54 @@ private:
         int boardSize = _pos->Size();
         int boardArea = boardSize*boardSize;
         Board temp(_pos->Size());
-        int playoutMoves[boardArea];
+        Colour playerOwned[boardArea];
         while (!_stop)
         {
             // Clone the board state.
             temp.CloneFrom(*_pos);
 
-            Colour selectedPlayer;
-            Node* leaf = SelectNode(temp, selectedPlayer);
+            // Reset the player ownership map.
+            memset(playerOwned, None, boardArea*sizeof(Colour));
+
+            Node* leaf = SelectNode(temp, playerOwned);
 
             // Perform a playout and record the result.
-            memset(playoutMoves, -1, boardArea*sizeof(int));
-            int res = Simulate(temp, leaf->Stats.LastMove, playoutMoves);
+            int res = Simulate(temp, leaf->Stats.LastMove, playerOwned);
 
             // Backpropagate the scores.
-            UpdateScores(leaf, selectedPlayer, playoutMoves, res);
+            UpdateScores(leaf, playerOwned, res);
         }
     }
 
-    Node* SelectNode(Board& temp, Colour& selectedPlayer)
+    Node* SelectNode(Board& temp, Colour* playerOwned)
     {
         // Find the leaf node which must be expanded.
-        Node* leaf = Select(temp, _root);
-
-        selectedPlayer = leaf->Stats.LastMove.Col;
+        Node* leaf = Select(temp, _root, playerOwned);
 
         // Expand the leaf node.
-        leaf = Expand(temp, leaf);
+        leaf = Expand(temp, leaf, playerOwned);
 
         return leaf;
     }
 
     // Select a node to expand.
-    Node* Select(Board& temp, Node* root)
+    Node* Select(Board& temp, Node* root, Colour* playerOwned)
     {
         Node* current = root;
         while (current->FullyExpanded() && current->HasChildren())
         {
             std::lock_guard<std::mutex> lk(current->Obj);
             current = _sp->Select(current->Children);
-            temp.MakeMove(current->Stats.LastMove);
+
+            const Move& move = current->Stats.LastMove;
+            temp.MakeMove(move);
+
+            // Update the ownership map.
+            int coord = move.Coord;
+            if (coord != PassCoord && playerOwned[coord] == None)
+            {
+                playerOwned[coord] = move.Col;
+            }
         }
 
         return current;
@@ -127,7 +135,7 @@ private:
     // The virtual loss implementation is currently rather confusing.
     // We need to ensure that all of the nodes we have selected are affected, which is a little
     // awkward with the locks in place.
-    Node* Expand(Board& temp, Node* leaf) const
+    Node* Expand(Board& temp, Node* leaf, Colour* playerOwned) const
     {
         Node* expanded = leaf;
         std::lock_guard<std::mutex> lk(expanded->Obj);
@@ -141,27 +149,37 @@ private:
         if (!expanded->FullyExpanded())
         {
             expanded = expanded->ExpandNext();
-            temp.MakeMove(expanded->Stats.LastMove);
+
+            const Move& move = expanded->Stats.LastMove;
+            temp.MakeMove(move);
             expanded->Moves = temp.GetMoves();
             expanded->Stats.VirtualLoss();
+
+            // Update the ownership map.
+            int coord = move.Coord;
+            if (coord != PassCoord && playerOwned[coord] == None)
+            {
+                playerOwned[coord] = move.Col;
+            }
         }
 
         return expanded;
     }
 
     // Perform a simulation from the specified game state.
-    int Simulate(Board& temp, const Move& lastMove, int* playoutMoves)
+    int Simulate(Board& temp, const Move& lastMove, Colour* playerOwned)
     {
         // Make moves according to the playout policy until a terminal state is reached.
-        int turnNo = 0;
         Move move = lastMove;
         while ((move = _pp->Select(temp, move)) != BadMove)
         {
-            if ((turnNo & 1) && move.Coord != PassCoord && playoutMoves[move.Coord] == -1)
-                playoutMoves[move.Coord] = turnNo;
+            int coord = move.Coord;
+            if (coord != PassCoord && playerOwned[coord] == None)
+            {
+                playerOwned[coord] = move.Col;
+            }
 
             temp.MakeMove(move);
-            ++turnNo;
         }
 
         return temp.Score();
@@ -179,16 +197,17 @@ private:
     }
 
     // Backpropagate the score from the simulation up the tree.
-    void UpdateScores(Node* leaf, Colour selectedPlayer, int* playoutMoves, int score) const
+    void UpdateScores(Node* leaf, Colour* playerOwned, int score) const
     {
+        // Backtrack the scores up the tree.
         while (leaf != nullptr)
         {
             std::lock_guard<std::mutex> lk(leaf->Obj);
+
+            // RAVE update all children of leaf.
+            RaveUpdate(leaf, playerOwned, score);
+
             MoveStats& stats = leaf->Stats;
-            if (stats.LastMove.Col == selectedPlayer)
-            {
-                RaveUpdate(leaf, playoutMoves, score);
-            }
 
             // Reverse the effects of virtual losses.
             stats.VirtualWin();
@@ -197,15 +216,25 @@ private:
         }
     }
 
-    void RaveUpdate(Node* node, int* playoutMoves, int score) const
+    // The RAVE update effects all children of this node.
+    // The ultimate effect is that all siblings of nodes that were traversed during selection phase 
+    // will potentially be updated.
+    void RaveUpdate(Node* node, Colour* playerOwned, int score) const
     {
-        for (Node* child : node->Children)
+        // Update the node if possible.
+        if (node != nullptr)
         {
-            MoveStats& stats = child->Stats;
-            int coord = stats.LastMove.Coord;
-            if (coord != PassCoord && playoutMoves[coord] != -1)
+            for (Node* child : node->Children)
             {
-                stats.UpdateRaveScore(score);
+                // Update this child's stats.
+                MoveStats& stats = child->Stats;
+                int coord = stats.LastMove.Coord;
+                Colour col = stats.LastMove.Col;
+                if (coord != PassCoord && playerOwned[coord] == col)
+                {
+                    // This is valid evidence for the node.
+                    stats.UpdateRaveScore(score);
+                }
             }
         }
     }

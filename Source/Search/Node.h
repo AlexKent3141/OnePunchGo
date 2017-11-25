@@ -13,6 +13,9 @@ struct MoveStats
     int Visits;
     int Wins;
 
+    int PriorVisits;
+    int PriorWins;
+
     int RaveVisits;
     int RaveWins;
 
@@ -20,34 +23,40 @@ struct MoveStats
     void VirtualLoss()
     {
         ++Visits;
-        Wins += LastMove.Col == Black ? -1 : 1;
     }
 
     // Add a virtual win.
     void VirtualWin()
     {
         --Visits;
-        Wins += LastMove.Col == Black ? 1 : -1;
     }
 
     // Update with the new score.
     void UpdateScore(int score)
     {
         ++Visits;
-        Wins += LastMove.Col == Black ? score : -score;
+
+        bool win = (LastMove.Col == Black && score > 0) ||
+                   (LastMove.Col == White && score < 0);
+
+        Wins += win ? 1 : 0;
     }
 
     // Update the rave score.
     void UpdateRaveScore(int score)
     {
         ++RaveVisits;
-        RaveWins += LastMove.Col == Black ? score : -score;
+
+        bool win = (LastMove.Col == Black && score > 0) ||
+                   (LastMove.Col == White && score < 0);
+
+        RaveWins += win ? 1 : 0;
     }
 
     // Get the probability of winning for this node.
     double WinningChance() const
     {
-        return ((double)Wins / Visits + 1) / 2;
+        return (double)Wins / Visits;
     }
 };
 
@@ -86,7 +95,7 @@ struct Node
     {
         assert(!FullyExpanded());
         Node* next = new Node;
-        next->Stats = { Moves[Unexpanded++], 0, 0 };
+        next->Stats = { Moves[Unexpanded++] };
         next->Unexpanded = 0;
         next->Parent = this;
         Children.push_back(next);
@@ -98,7 +107,7 @@ struct Node
 inline Node* MakeRoot()
 {
     Node* root = new Node;
-    root->Stats = { {}, 0, 0 };
+    root->Stats = {};
     root->Unexpanded = 0;
     root->Parent = nullptr;
     return root;

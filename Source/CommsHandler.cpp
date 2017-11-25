@@ -123,10 +123,19 @@ bool CommsHandler::Process(const std::string& message)
             Log("WinRate: " + std::to_string(winRate));
 
             const double ResignThreshold = 0.1;
+            const double PassThreshold = 0.99;
             if (winRate > ResignThreshold)
             {
-                _history.AddMove(move);
-                SuccessResponse(id, CoordToString(move.Coord, _boardSize));
+                bool lastMovePass = !_history.empty() && _history.LastMove().Coord == PassCoord;
+                if (winRate > PassThreshold && lastMovePass)
+                {
+                    SuccessResponse(id, "pass");
+                }
+                else
+                {
+                    _history.AddMove(move);
+                    SuccessResponse(id, CoordToString(move.Coord, _boardSize));
+                }
             }
             else
             {

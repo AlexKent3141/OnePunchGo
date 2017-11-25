@@ -30,6 +30,12 @@ public:
     {
         _history.clear();
     }
+
+    bool empty() const { return _history.empty(); }
+
+    size_t size() const { return _history.size(); }
+
+    Move LastMove() const { return _history.back(); }
     
 private:
     std::vector<Move> _history;
