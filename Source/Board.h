@@ -20,7 +20,8 @@ struct Point
     int GroupSize;
     int Liberties;
     int Coord;
-    std::vector<Point*> Neighbours;
+    std::vector<Point*> Orthogonals;
+    std::vector<Point*> Diagonals;
 };
 
 // The board object which can be incrementally updated.
@@ -50,11 +51,14 @@ public:
     // Clone fields from other.
     void CloneFrom(const Board&);
 
-    // Check the legality of the specified move in this position.
-    MoveInfo CheckMove(int) const;
+    // Roughly check whether this point can possible be an eye.
+    bool IsEye(Colour, int) const;
 
     // Check the legality of the specified move in this position.
-    MoveInfo CheckMove(Colour, int) const;
+    MoveInfo CheckMove(int, bool duringPlayout = false) const;
+
+    // Check the legality of the specified move in this position.
+    MoveInfo CheckMove(Colour, int, bool duringPlayout = false) const;
 
     // Get all moves available for the current colour.
     std::vector<Move> GetMoves(bool duringPlayout = false) const;

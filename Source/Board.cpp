@@ -72,21 +72,44 @@ void Board::CloneFrom(const Board& other)
     }
 }
 
-// Check the legality of the specified move in this position.
-MoveInfo Board::CheckMove(int loc) const
+// Check for potential eyes.
+// All orthogonals must be the same colour and there is also a constraint on diagonals.
+bool Board::IsEye(Colour col, int loc) const
 {
-    return CheckMove(this->_colourToMove, loc);
+    const Point& pt = _points[loc];
+    bool isEye = pt.Col == None;
+
+    if (isEye)
+    {
+        int orth = 0, enemyDiag = 0;
+        for (const Point* const n : pt.Orthogonals) if (n->Col == col) ++orth;
+        for (const Point* const n : pt.Diagonals) if (n->Col != col && n->Col != None) ++enemyDiag;
+
+        size_t n = pt.Orthogonals.size();
+        isEye = n == 2 ? orth == 2 && enemyDiag == 0:
+                n == 3 ? orth == 3 && enemyDiag == 0:
+                n == 4 ? orth == 4 && enemyDiag <= 1:
+                false;
+    }
+
+    return isEye;
 }
 
 // Check the legality of the specified move in this position.
-MoveInfo Board::CheckMove(Colour col, int loc) const
+MoveInfo Board::CheckMove(int loc, bool duringPlayout) const
+{
+    return CheckMove(_colourToMove, loc, duringPlayout);
+}
+
+// Check the legality of the specified move in this position.
+MoveInfo Board::CheckMove(Colour col, int loc, bool duringPlayout) const
 {
     // Passing is always legal.
     if (loc == PassCoord)
         return Legal;
 
     // Check occupancy.
-    const Point& pt = this->_points[loc];
+    const Point& pt = _points[loc];
     MoveInfo res = pt.Col == None ? Legal : Occupied;
     if (res == Legal)
     {
@@ -94,10 +117,10 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         int liberties = 0;
         int captureLoc;
         size_t capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
-        size_t friendlyNeighbours = 0;
+        size_t friendlyOrthogonals = 0;
         bool friendInAtari = false;
         bool isAtari = false;
-        for (const Point* const n : pt.Neighbours)
+        for (const Point* const n : pt.Orthogonals)
         {
             if (n->Col == None)
             {
@@ -106,7 +129,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             else if (n->Col == col)
             {
                 liberties += n->Liberties-1;
-                friendlyNeighbours += n->Liberties > 1 ? 1 : 0;
+                friendlyOrthogonals += n->Liberties > 1 ? 1 : 0;
                 friendInAtari = friendInAtari || n->Liberties == 1;
             }
             else
@@ -134,8 +157,8 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             if (isAtari) res |= Atari;
             if (liberties == 1) res |= SelfAtari;
             if (capturesWithRepetition > 0) res |= Capture;
-            if (friendlyNeighbours == pt.Neighbours.size()) res |= FillsEye;
             if (friendInAtari && liberties > 1) res |= Save;
+            if (IsEye(col, loc)) res |= FillsEye;
         }
     }
 
@@ -151,7 +174,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
         PatternMatcher matcher;
         for (int i = 0; i < _boardArea; i++)
         {
-            MoveInfo info = CheckMove(i);
+            MoveInfo info = CheckMove(i, duringPlayout);
             if (info & Legal)
             {
                 if (!duringPlayout)
@@ -167,7 +190,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
                     }
                 }
 
-                if (!duringPlayout || !(info & FillsEye))
+                if (!(info & FillsEye))
                 {
                     moves.push_back({this->_colourToMove, i, info});
                 }
@@ -206,7 +229,7 @@ void Board::MakeMove(const Move& move)
         requireUpdate[pt.Coord] = true;
 
         // First detect stones which will get captured and remove them.
-        for (Point* const n : pt.Neighbours)
+        for (Point* const n : pt.Orthogonals)
         {
             if (n->Col != None)
             {
@@ -262,7 +285,7 @@ int Board::Score() const
         if (pt.Col == None)
         {
             // Look at a neighbour.
-            Point const* const n = pt.Neighbours[0];
+            Point const* const n = pt.Orthogonals[0];
             score += n->Col == Black ? 1 : -1;
         }
         else
@@ -316,11 +339,20 @@ void Board::InitialiseNeighbours()
     {
         r = i / _boardSize, c = i % _boardSize;
         _points[i].Coord = i;
-        _points[i].Neighbours.clear();
-        if (r > 0) _points[i].Neighbours.push_back(&_points[i-_boardSize]);
-        if (r < _boardSize-1) _points[i].Neighbours.push_back(&_points[i+_boardSize]);
-        if (c > 0) _points[i].Neighbours.push_back(&_points[i-1]);
-        if (c < _boardSize-1) _points[i].Neighbours.push_back(&_points[i+1]);
+
+        // Setup the orthogonals.
+        _points[i].Orthogonals.clear();
+        if (r > 0) _points[i].Orthogonals.push_back(&_points[i-_boardSize]);
+        if (r < _boardSize-1) _points[i].Orthogonals.push_back(&_points[i+_boardSize]);
+        if (c > 0) _points[i].Orthogonals.push_back(&_points[i-1]);
+        if (c < _boardSize-1) _points[i].Orthogonals.push_back(&_points[i+1]);
+
+        // Setup the diagonals.
+        _points[i].Diagonals.clear();
+        if (r > 0 && c > 0) _points[i].Diagonals.push_back(&_points[i-1-_boardSize]);
+        if (r > 0 && c < _boardSize-1) _points[i].Diagonals.push_back(&_points[i+1-_boardSize]);
+        if (r < _boardSize-1 && c > 0) _points[i].Diagonals.push_back(&_points[i-1+_boardSize]);
+        if (r < _boardSize-1 && c < _boardSize-1) _points[i].Diagonals.push_back(&_points[i+1+_boardSize]);
     }
 }
 
@@ -349,7 +381,7 @@ void Board::FFLiberties(Point* const pt, int& liberties, int& groupSize, bool* r
 {
     inGroup[pt->Coord] = true;
     ++groupSize;
-    for (Point* const n : pt->Neighbours)
+    for (Point* const n : pt->Orthogonals)
     {
         if (n->Col == pt->Col && !inGroup[n->Coord])
         {
@@ -386,7 +418,7 @@ void Board::FFCapture(Point* const pt, bool* requireUpdate, uint64_t& groupHash)
     pt->Liberties = 0;
     groupHash ^= Zobrist::Instance()->Key(origCol, pt->Coord);
 
-    for (Point* const n : pt->Neighbours)
+    for (Point* const n : pt->Orthogonals)
     {
         if (n->Col == origCol)
         {

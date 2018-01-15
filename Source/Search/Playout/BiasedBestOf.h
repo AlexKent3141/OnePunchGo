@@ -81,9 +81,8 @@ private:
         std::vector<Move> movesOfType;
         for (const Move& m : moves)
         {
-            bool selfAtari = m.Info & SelfAtari;
             bool rightType = m.Info & moveType;
-            if (!selfAtari && rightType)
+            if (rightType)
             {
                 movesOfType.push_back(m);
             }
@@ -109,7 +108,9 @@ private:
                       || (c == lastCoord - boardSize && ly > 0)
                       || (c == lastCoord + boardSize && ly < boardSize - 1);
             
-            if (local && matcher.HasMatch(board, 3, c))
+            bool urgent = m.Info & (Atari | Capture);
+            bool match = matcher.HasMatch(board, 3, c);
+            if (local && (urgent || match))
             {
                 locals.push_back(m);
             }
@@ -132,12 +133,6 @@ private:
                 bestScore = score;
                 bestMove = move;
             }
-        }
-
-        // If only bad moves are available then return a pass.
-        if (bestScore < 0)
-        {
-            bestMove = { board.ColourToMove(), PassCoord };
         }
 
         return bestMove;

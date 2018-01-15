@@ -7,6 +7,7 @@
 #include "Tests/PerformanceTest.h"
 #include "Tests/PatternMatchTest.h"
 #include "Tests/TsumegoTest.h"
+#include "Tests/ExperimentTest.h"
 #include <iostream>
 #include <string>
 
@@ -24,6 +25,12 @@ int main(int argc, char* argv[])
         runner.RunTests<KoDetectionTest>();
         runner.RunTests<PatternMatchTest>();
         runner.RunTests<TsumegoTest>();
+    }
+    if (args->HasArg("-experiment"))
+    {
+        // Execute the experimental tests.
+        TestRunner runner;
+        runner.RunTests<ExperimentTest>();
     }
     else if (args->HasArg("-perf"))
     {

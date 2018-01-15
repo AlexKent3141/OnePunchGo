@@ -1,0 +1,71 @@
+# Test positions where OPG is making peculiar predictions/winning rate is way off.
+# These are typically situations which are obviously decided but OPG is still contesting.
+# The solution is the correct win rate.
+
+Begin: White is going to get captured, but OPG predicts 75% win rate!
+Player:
+W
+Position:
+.WB......
+.B..BB...
+BBW.BWW..
+WWBBBBW..
+.W.BWWW..
+WWWWBW...
+BBBBBW...
+BWBBWWB..
+.WB.BWW..
+Solution:
+0
+End
+
+Begin: White has won, but currently OPG gives black 11%.
+Player:
+B
+Position:
+WWWWBBWWW
+B.W.BBBW.
+.WWWWBWWW
+WWBBBBBW.
+.WWB.BWWW
+W.WBBBBW.
+BWWWB.BBW
+BBBWB....
+BBBBBBB.W
+Solution:
+0
+End
+
+Begin: Black wins if he connects at J8 to create a bulky 5.
+Player:
+B
+Position:
+....W.WWB
+B.BBBWWB.
+.BWWBBWBB
+WWW..BW.W
+.WW.BBWW.
+WBWB.BWBW
+.BWBBWBBW
+WWB.BWBBW
+.B.B.W.B.
+Solution:
+1
+End
+
+Begin: Black is lost, but still predicts 33% win rate.
+Player:
+B
+Position:
+......B..
+BBBWW.BW.
+.W.WBBBW.
+W.WWB.W.W
+.WWBBBBW.
+BWBB.BW..
+.BWBWWW..
+.BWW.....
+.B.......
+Solution:
+0
+End
