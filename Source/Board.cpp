@@ -325,9 +325,9 @@ void Board::InitialiseEmpty(int boardSize)
     _boardArea = _boardSize*_boardSize;
     _points = new Point[_boardArea];
     for (int i = 0; i < _boardArea; i++)
-        _points[i] = { None, 0, 0 };
+        _points[i] = { None, 0, nullptr, nullptr, nullptr };
 
-    this->InitialiseNeighbours();
+    InitialiseNeighbours();
     _hashes.push_back(CurrentRules.Ko == Situational ? Zobrist::Instance()->BlackTurn() : 0);
 }
 

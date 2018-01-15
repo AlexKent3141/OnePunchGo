@@ -1,6 +1,7 @@
 #ifndef __BOARD_H__
 #define __BOARD_H__
 
+#include "BitSet.h"
 #include "Globals.h"
 #include "Move.h"
 #include "MoveHistory.h"
@@ -10,18 +11,26 @@
 #include <cassert>
 #include <cstring>
 #include <algorithm>
+#include <list>
 #include <vector>
 #include <string>
 
-// The data for a single point on the Go board.
+// A chain of stones.
+struct Chain 
+{
+    Colour Col;
+    BitSet* Stones;
+    BitSet* Neighbours;
+};
+
+// Represents a single point on the goban.
 struct Point
 {
     Colour Col;
-    int GroupSize;
-    int Liberties;
     int Coord;
-    std::vector<Point*> Orthogonals;
-    std::vector<Point*> Diagonals;
+    BitSet* Orthogonals;
+    BitSet* Diagonals;
+    Chain* Chain;
 };
 
 // The board object which can be incrementally updated.
@@ -82,6 +91,7 @@ private:
     int _boardSize;
     int _boardArea;
     bool _passes[2] = {false};
+    std::list<Chain*> _chains;
 
     // Initialise an empty board of the specified size.
     void InitialiseEmpty(int);
