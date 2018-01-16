@@ -16,21 +16,29 @@
 #include <string>
 
 // A chain of stones.
-struct Chain 
+struct StoneChain 
 {
     Colour Col;
     BitSet* Stones;
     BitSet* Neighbours;
+    uint64_t Hash;
 };
 
 // Represents a single point on the goban.
 struct Point
 {
-    Colour Col;
     int Coord;
+    std::vector<Point*> Neighbours;
     BitSet* Orthogonals;
     BitSet* Diagonals;
-    Chain* Chain;
+    StoneChain** Chain; // Pointer-to-pointer so that if a Chain is nulled every Point should know...
+
+    inline Colour Col() const
+    {
+        if (Chain == nullptr || *Chain == nullptr) return None;
+        StoneChain* c = *Chain;
+        return c->Col;
+    }
 };
 
 // The board object which can be incrementally updated.
@@ -49,7 +57,12 @@ public:
     inline Colour ColourToMove() const { return _colourToMove; }
 
     // Get the colour at the specified location.
-    inline Colour PointColour(int loc) const { return _points[loc].Col; }
+    inline Colour PointColour(int loc) const
+    {
+        assert(_points[loc].Chain != nullptr && *(_points[loc].Chain) != nullptr);
+        StoneChain* c = *_points[loc].Chain;
+        return c->Col;
+    }
 
     // Get the latest hash.
     inline uint64_t CurrentHash() const { return _hashes[_turnNumber-1]; }
@@ -91,7 +104,11 @@ private:
     int _boardSize;
     int _boardArea;
     bool _passes[2] = {false};
-    std::list<Chain*> _chains;
+
+    BitSet* _empty = nullptr;
+    BitSet* _blackStones = nullptr;
+    BitSet* _whiteStones = nullptr;
+    std::list<StoneChain*> _chains;
 
     // Initialise an empty board of the specified size.
     void InitialiseEmpty(int);
@@ -102,13 +119,16 @@ private:
     // Check whether the specified move and capture would result in a board repetition.
     bool IsKoRepetition(Colour, int, int) const;
 
-    // Flood fill algorithm which updates the liberties for all stones in the group containing
-    // the specified point.
-    void FFLiberties(Point* const, int&, int&, bool*, bool*, bool*, bool root = true);
+    // Remove the chain.
+    void RemoveChain(StoneChain*);
 
-    // Flood fill algorithm which removes all stones in the group containing the specified point.
-    // Points which are affected by this capture get flagged as requiring an update.
-    void FFCapture(Point* const, bool*, uint64_t&);
+    // Count the liberties of the given chain.
+    int CountChainLiberties(StoneChain*) const;
+
+    int CountChainSize(StoneChain*) const;
+
+    // Merge the target chain onto the base chain.
+    void MergeChains(StoneChain*, StoneChain*) const;
 };
 
 #endif // __BOARD_H__
