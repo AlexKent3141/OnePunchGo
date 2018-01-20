@@ -3,7 +3,6 @@
 
 #include "PlayoutPolicy.h"
 #include "../../RandomGenerator.h"
-#include "../../Patterns/PatternMatcher.h"
 #include <cfloat>
 #include <iostream>
 
@@ -95,7 +94,6 @@ private:
     std::vector<Move> GetLocals(const Board& board, const std::vector<Move>& moves, int lastCoord) const
     {
         std::vector<Move> locals;
-        PatternMatcher matcher;
 
         int boardSize = board.Size();
         int lx = lastCoord % boardSize;
@@ -109,8 +107,7 @@ private:
                       || (c == lastCoord + boardSize && ly < boardSize - 1);
             
             bool urgent = m.Info & (Atari | Capture);
-            bool match = matcher.HasMatch(board, 3, c);
-            if (local && (urgent || match))
+            if (local && urgent)
             {
                 locals.push_back(m);
             }

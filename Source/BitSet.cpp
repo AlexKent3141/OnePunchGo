@@ -85,6 +85,15 @@ int BitSet::CountAnd(const BitSet& other) const
     return s;
 }
 
+int BitSet::CountAndSparse(const BitSet& other) const
+{
+    assert(_numBits == other._numBits);
+    int s = 0;
+    for (int i = 0; i < _numWords; i++)
+        s += CountSparse(_words[i] & other._words[i]);
+    return s;
+}
+
 void BitSet::Invert()
 {
     for (int i = 0; i < _numWords-1; i++)
@@ -135,6 +144,15 @@ int BitSet::Count(Word w) const
     w = w - ((w >> 1) & 0x5555555555555555);
     w = (w & 0x3333333333333333) + ((w >> 2) & 0x3333333333333333);
     return (((w + (w >> 4)) & 0xF0F0F0F0F0F0F0F) * 0x101010101010101) >> 56;
+}
+
+// Kernighan
+int BitSet::CountSparse(Word w) const
+{
+    int c;
+    for (c = 0; w; c++)
+        w &= w-1;
+    return c;
 }
 
 std::string BitSet::WordString(Word w) const

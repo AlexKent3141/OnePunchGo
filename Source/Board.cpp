@@ -1,5 +1,6 @@
 #include "Board.h"
 #include "Patterns/PatternMatcher.h"
+#include <iostream>
 
 Board::Board(int boardSize)
 {
@@ -118,7 +119,7 @@ void Board::CloneFrom(const Board& other)
         BitSet* stones = new BitSet(*oc.Stones);
         BitSet* neighbours = new BitSet(*oc.Neighbours);
 
-        StoneChain c = { stones, neighbours, oc.Hash };
+        StoneChain c = { oc.Liberties, stones, neighbours, oc.Hash, oc.Ignore };
         _chains.push_back(c);
     }
 
@@ -133,17 +134,15 @@ void Board::CloneFrom(const Board& other)
 
 // Check for potential eyes.
 // All orthogonals must be the same colour and there is also a constraint on diagonals.
-bool Board::IsEye(Colour col, int loc) const
+bool Board::IsEye(Colour col, int loc, int orth) const
 {
     const Point& pt = _points[loc];
     bool isEye = pt.Col == None;
 
     if (isEye)
     {
-        const BitSet* const friendly = col == Black ? _blackStones : _whiteStones;
         const BitSet* const enemy = col == Black ? _whiteStones : _blackStones;
-        int orth = pt.Orthogonals->CountAnd(*friendly);
-        int enemyDiag = pt.Diagonals->CountAnd(*enemy);
+        int enemyDiag = pt.Diagonals->CountAndSparse(*enemy);
 
         size_t n = pt.Neighbours.size();
         isEye = n == 2 ? orth == 2 && enemyDiag == 0:
@@ -182,20 +181,21 @@ MoveInfo Board::CheckMove(Colour col, int loc, bool duringPlayout) const
         bool isAtari = false;
         for (const Point* const n : pt.Neighbours)
         {
+            const StoneChain& c = _chains[n->ChainId];
             if (n->Col == None)
             {
                 ++liberties;
             }
             else if (n->Col == col)
             {
-                int nlibs = CountChainLiberties(n->ChainId);
+                int nlibs = c.Liberties;
                 liberties += nlibs-1;
                 friendlyOrthogonals += nlibs > 1 ? 1 : 0;
                 friendInAtari = friendInAtari || nlibs == 1;
             }
             else
             {
-                int nlibs = CountChainLiberties(n->ChainId);
+                int nlibs = c.Liberties;
                 if (nlibs == 1)
                 {
                     ++liberties;
@@ -220,7 +220,7 @@ MoveInfo Board::CheckMove(Colour col, int loc, bool duringPlayout) const
             if (liberties == 1) res |= SelfAtari;
             if (capturesWithRepetition > 0) res |= Capture;
             if (friendInAtari && liberties > 1) res |= Save;
-            if (IsEye(col, loc)) res |= FillsEye;
+            if (IsEye(col, loc, friendlyOrthogonals)) res |= FillsEye;
         }
     }
 
@@ -231,6 +231,7 @@ MoveInfo Board::CheckMove(Colour col, int loc, bool duringPlayout) const
 std::vector<Move> Board::GetMoves(bool duringPlayout) const
 {
     std::vector<Move> moves;
+    moves.reserve(_empty->Count());
     if (!GameOver())
     {
         PatternMatcher matcher;
@@ -254,7 +255,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
 
                 if (!(info & FillsEye))
                 {
-                    moves.push_back({this->_colourToMove, i, info});
+                    moves.push_back({_colourToMove, i, info});
                 }
             }
         }
@@ -284,19 +285,15 @@ void Board::MakeMove(const Move& move)
         Point& pt = _points[move.Coord];
         pt.Col = move.Col;
 
-        // Update the cached BitSets.
-        BitSet* friendly = move.Col == Black ? _blackStones : _whiteStones;
-        friendly->Set(move.Coord);
-        _empty->UnSet(move.Coord);
-
         // Iterate through the chains which are affected by this move.
-        std::vector<int> neighbourChains;
+        std::vector<int> neighbourChains, enemyChains;
         for (Point* const n : pt.Neighbours)
         {
             int nc = n->ChainId;
             if (nc != NoChain)
             {
-                if (n->Col != move.Col && CountChainLiberties(nc) == 0)
+                const StoneChain& c = _chains[nc];
+                if (n->Col != move.Col && c.Liberties == 1)
                 {
                     // Capture this enemy group.
                     nextHash ^= CaptureChain(nc);
@@ -304,7 +301,14 @@ void Board::MakeMove(const Move& move)
                 else if (n->Col == move.Col)
                 {
                     // Friendly chain - need to merge.
-                    neighbourChains.push_back(nc);
+                    if (std::find(neighbourChains.begin(), neighbourChains.end(), nc) == neighbourChains.end())
+                        neighbourChains.push_back(nc);
+                }
+                else if (n->Col != None)
+                {
+                    // Enemy chain.
+                    if (std::find(enemyChains.begin(), enemyChains.end(), nc) == enemyChains.end())
+                        enemyChains.push_back(nc);
                 }
             }
         }
@@ -312,8 +316,13 @@ void Board::MakeMove(const Move& move)
         uint64_t moveHash  = z->Key(move.Col, move.Coord);
         nextHash ^= moveHash;
 
+        // Update the cached BitSets.
+        BitSet* friendly = move.Col == Black ? _blackStones : _whiteStones;
+        friendly->Set(move.Coord);
+        _empty->UnSet(move.Coord);
+
         // If there are friendly neighbouring chains then combine them.
-        CombineChainsForMove(move, moveHash, neighbourChains);
+        CombineChainsForMove(move, moveHash, neighbourChains, enemyChains);
     }
 
     // Update the colour to move.
@@ -472,7 +481,7 @@ int Board::CountChainSize(int id) const
 
 uint64_t Board::CaptureChain(int id)
 {
-    const StoneChain& chain = _chains[id];
+    StoneChain& chain = _chains[id];
     int bit;
     BitSetIterator it(*chain.Stones);
     while ((bit = it.Next()) != BitSetIterator::NoBit)
@@ -486,6 +495,18 @@ uint64_t Board::CaptureChain(int id)
         _empty->Set(bit);
     }
 
+    chain.Ignore = true;
+
+    // TODO: Update liberties of neighbouring chains.
+    for (size_t i = 0; i < _chains.size(); i++)
+    {
+        StoneChain& c = _chains[i];
+        if (!c.Ignore)
+        {
+            c.Liberties = c.Neighbours->CountAnd(*_empty);
+        }
+    }
+
     return chain.Hash;
 }
 
@@ -497,14 +518,21 @@ void Board::CreateNewChainForMove(const Move& move, uint64_t moveHash)
     BitSet* stones = new BitSet(_boardArea);
     stones->Set(move.Coord);
 
-    StoneChain c = { stones, neighbours, moveHash };
+    StoneChain c = { neighbours->CountAnd(*_empty), stones, neighbours, moveHash, false };
     _chains.push_back(c);
 
     pt.ChainId = _chains.size()-1;
 }
 
-void Board::CombineChainsForMove(const Move& move, uint64_t moveHash, const std::vector<int>& neighbourChains)
+void Board::CombineChainsForMove(const Move& move, uint64_t moveHash, const std::vector<int>& neighbourChains, const std::vector<int>& enemyChains)
 {
+    // Reduce the liberties of the enemy chains.
+    for (int i : enemyChains)
+    {
+        StoneChain& c = _chains[i];
+        --c.Liberties;
+    }
+
     if (neighbourChains.empty())
     {
         CreateNewChainForMove(move, moveHash);
@@ -526,7 +554,7 @@ void Board::CombineChainsForMove(const Move& move, uint64_t moveHash, const std:
         // Add any other neighbouring chains.
         for (size_t i = 1; i < neighbourChains.size(); i++)
         {
-            const StoneChain& n = _chains[neighbourChains[i]];
+            StoneChain& n = _chains[neighbourChains[i]];
 
             // Update stones & neighbours.
             base.Stones->Set(*n.Stones);
@@ -541,21 +569,27 @@ void Board::CombineChainsForMove(const Move& move, uint64_t moveHash, const std:
                 Point& pt = _points[bit];
                 pt.ChainId = nc;
             }
+
+            n.Ignore = true;
         }
 
         // Remove potential overlap of neighbours and stones.
         base.Neighbours->UnSet(*base.Stones);
+
+        // Reassess the liberties.
+        base.Liberties = base.Neighbours->CountAnd(*_empty);
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
+void Board::LogPointDetails(int coord) const
+{
+    const Point& pt = _points[coord];
+    std::cout << pt.Coord << " " << pt.Col << " " << pt.ChainId << std::endl;
+    if (pt.ChainId != NoChain)
+    {
+        const StoneChain& c = _chains[pt.ChainId];
+        std::cout << "Liberties: " << c.Liberties << std::endl;
+        std::cout << "Hash: " << c.Hash << std::endl;
+        std::cout << "Ignore: " << c.Ignore << std::endl;
+    }
+}

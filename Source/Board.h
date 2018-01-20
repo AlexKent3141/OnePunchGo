@@ -12,15 +12,17 @@
 #include <cstring>
 #include <algorithm>
 #include <list>
-#include <vector>
 #include <string>
+#include <vector>
 
 // A chain of stones.
 struct StoneChain 
 {
+    int Liberties;
     BitSet* Stones;
     BitSet* Neighbours;
     uint64_t Hash;
+    bool Ignore;
 };
 
 // Represents a single point on the goban.
@@ -65,7 +67,7 @@ public:
     void CloneFrom(const Board&);
 
     // Roughly check whether this point can possible be an eye.
-    bool IsEye(Colour, int) const;
+    bool IsEye(Colour, int, int) const;
 
     // Check the legality of the specified move in this position.
     MoveInfo CheckMove(int, bool duringPlayout = false) const;
@@ -124,7 +126,12 @@ private:
     void CreateNewChainForMove(const Move&, uint64_t);
 
     // Merge the specified chains.
-    void CombineChainsForMove(const Move&, uint64_t, const std::vector<int>&);
+    void CombineChainsForMove(const Move&,
+                              uint64_t,
+                              const std::vector<int>&,
+                              const std::vector<int>&);
+
+    void LogPointDetails(int) const;
 };
 
 #endif // __BOARD_H__

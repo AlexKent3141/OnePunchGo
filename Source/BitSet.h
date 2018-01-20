@@ -49,6 +49,8 @@ public:
     // Count the number of set bits in the bitwise AND of this and another BitSet.
     int CountAnd(const BitSet&) const;
 
+    int CountAndSparse(const BitSet&) const;
+
     // Invert this BitSet in place.
     void Invert();
 
@@ -68,6 +70,7 @@ private:
     int _numBits;
 
     int Count(Word) const;
+    int CountSparse(Word) const;
 
     // Get a string representation for the word.
     std::string WordString(Word) const;
