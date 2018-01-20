@@ -25,7 +25,7 @@ public:
         memcpy(_locations, locations, _n*_n*sizeof(Location));
     }
 
-    Pattern(const std::string& patternDef, int n) : _n(n)
+    Pattern(const std::string& patternDef, size_t n) : _n(n)
     {
         assert(n*n == patternDef.size());
         _locations = new Location[patternDef.size()];

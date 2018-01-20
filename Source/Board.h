@@ -18,7 +18,6 @@
 // A chain of stones.
 struct StoneChain 
 {
-    Colour Col;
     BitSet* Stones;
     BitSet* Neighbours;
     uint64_t Hash;
@@ -27,18 +26,12 @@ struct StoneChain
 // Represents a single point on the goban.
 struct Point
 {
+    Colour Col;
     int Coord;
     std::vector<Point*> Neighbours;
     BitSet* Orthogonals;
     BitSet* Diagonals;
-    StoneChain** Chain; // Pointer-to-pointer so that if a Chain is nulled every Point should know...
-
-    inline Colour Col() const
-    {
-        if (Chain == nullptr || *Chain == nullptr) return None;
-        StoneChain* c = *Chain;
-        return c->Col;
-    }
+    int ChainId;
 };
 
 // The board object which can be incrementally updated.
@@ -59,9 +52,7 @@ public:
     // Get the colour at the specified location.
     inline Colour PointColour(int loc) const
     {
-        assert(_points[loc].Chain != nullptr && *(_points[loc].Chain) != nullptr);
-        StoneChain* c = *_points[loc].Chain;
-        return c->Col;
+        return _points[loc].Col;
     }
 
     // Get the latest hash.
@@ -97,6 +88,8 @@ public:
     std::string ToString() const;
 
 private:
+    const int NoChain = -1;
+
     Colour _colourToMove = Black;
     Point* _points = nullptr;
     std::vector<uint64_t> _hashes;
@@ -108,7 +101,7 @@ private:
     BitSet* _empty = nullptr;
     BitSet* _blackStones = nullptr;
     BitSet* _whiteStones = nullptr;
-    std::list<StoneChain*> _chains;
+    std::vector<StoneChain> _chains;
 
     // Initialise an empty board of the specified size.
     void InitialiseEmpty(int);
@@ -119,16 +112,19 @@ private:
     // Check whether the specified move and capture would result in a board repetition.
     bool IsKoRepetition(Colour, int, int) const;
 
-    // Remove the chain.
-    void RemoveChain(StoneChain*);
-
     // Count the liberties of the given chain.
-    int CountChainLiberties(StoneChain*) const;
+    int CountChainLiberties(int) const;
 
-    int CountChainSize(StoneChain*) const;
+    int CountChainSize(int) const;
 
-    // Merge the target chain onto the base chain.
-    void MergeChains(StoneChain*, StoneChain*) const;
+    // Capture the chain with the specified ID.
+    // Returns the hash of the chain.
+    uint64_t CaptureChain(int);
+
+    void CreateNewChainForMove(const Move&, uint64_t);
+
+    // Merge the specified chains.
+    void CombineChainsForMove(const Move&, uint64_t, const std::vector<int>&);
 };
 
 #endif // __BOARD_H__
