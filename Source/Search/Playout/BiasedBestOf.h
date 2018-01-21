@@ -2,13 +2,14 @@
 #define __BIASED_BEST_OF_N_PLAYOUT_POLICY_H__
 
 #include "PlayoutPolicy.h"
+#include "BestOf.h"
 #include "../../RandomGenerator.h"
 #include <cfloat>
 #include <iostream>
 
-// Best-of-N playout policy.
+// Best-of-N playout policy with biases.
 template<unsigned int N>
-class BiasedBestOf : public PlayoutPolicy
+class BiasedBestOf : protected BestOf<N>
 {
 public:
     // Randomly select N legal moves and decide which one looks more promising.
@@ -17,122 +18,41 @@ public:
         if (board.GameOver())
             return BadMove;
 
-        auto moves = board.GetMoves(true);
-
         Move bestMove = BadMove;
-        std::vector<Move> selection;
-        if (_gen.NextDouble() < 0.45)
+
+        // Global capturing move.
+        if (BestOf<N>::_gen.NextDouble() < 0.45)
         {
-            selection = GetMatches(moves, Capture);
-            if (!selection.empty())
+            bestMove = board.GetRandomMoveAttackingLiberties(1, BestOf<N>::_gen);
+            if (bestMove != BadMove)
             {
-                return selection[_gen.Next(selection.size())];
+                return bestMove;
             }
         }
 
-        if (_gen.NextDouble() < 0.55)
+        // Global saving move.
+        if (BestOf<N>::_gen.NextDouble() < 0.55)
         {
-            selection = GetMatches(moves, Save);
-            if (!selection.empty())
+            bestMove = board.GetRandomMoveSaving(BestOf<N>::_gen);
+            if (bestMove != BadMove)
             {
-                return selection[_gen.Next(selection.size())];
+                return bestMove;
             }
         }
 
-        if (_gen.NextDouble() < 0.55 && lastMove.Coord != PassCoord)
+        // Local urgent move.
+        if (BestOf<N>::_gen.NextDouble() < 0.55 && lastMove.Coord != PassCoord)
         {
-            selection = GetLocals(board, moves, lastMove.Coord);
-            if (!selection.empty())
+            const MoveInfo Urgent = Capture | Atari;
+            bestMove = board.GetRandomMoveLocal(lastMove.Coord, Urgent, BestOf<N>::_gen);
+            if (bestMove != BadMove)
             {
-                return selection[_gen.Next(selection.size())];
+                return bestMove;
             }
         }
 
-        bestMove = BestOf(board, moves);
-
-        return bestMove;
-    }
-
-private:
-    RandomGenerator _gen;
-
-    const double CaptureScore = 10;
-    const double AtariScore = 5;
-    const double SelfAtariScore = -8;
-    const double SaveScore = 10;
-
-    // Score the move according to how good/bad it looks.
-    double MoveScore(const Move& move) const
-    {
-        double score = 0;
-        const MoveInfo& info = move.Info;
-        if (info & Capture) score += CaptureScore;
-        if (info & Atari) score += AtariScore;
-        if (info & SelfAtari) score += SelfAtariScore;
-        if (info & Save) score += SaveScore;
-
-        return score;
-    }
-
-    // Get the moves within the list that are of a certain type.
-    std::vector<Move> GetMatches(const std::vector<Move>& moves, int moveType) const
-    {
-        std::vector<Move> movesOfType;
-        for (const Move& m : moves)
-        {
-            bool rightType = m.Info & moveType;
-            if (rightType)
-            {
-                movesOfType.push_back(m);
-            }
-        }
-
-        return movesOfType;
-    }
-
-    // Get the local moves which match a 3x3 pattern.
-    std::vector<Move> GetLocals(const Board& board, const std::vector<Move>& moves, int lastCoord) const
-    {
-        std::vector<Move> locals;
-
-        int boardSize = board.Size();
-        int lx = lastCoord % boardSize;
-        int ly = lastCoord / boardSize;
-        for (const Move& m : moves)
-        {
-            int c = m.Coord;
-            bool local = (c == lastCoord + 1 && lx < boardSize - 1)
-                      || (c == lastCoord - 1 && lx > 0)
-                      || (c == lastCoord - boardSize && ly > 0)
-                      || (c == lastCoord + boardSize && ly < boardSize - 1);
-            
-            bool urgent = m.Info & (Atari | Capture);
-            if (local && urgent)
-            {
-                locals.push_back(m);
-            }
-        }
-
-        return locals;
-    }
-
-    Move BestOf(const Board& board, const std::vector<Move>& moves)
-    {
-        double bestScore = -DBL_MAX;
-        Move bestMove = BadMove;
-        for (size_t i = 0; i < N; i++)
-        {
-            // Choose a move randomly.
-            const Move& move = moves[_gen.Next(moves.size())];
-            double score = MoveScore(move);
-            if (score > bestScore)
-            {
-                bestScore = score;
-                bestMove = move;
-            }
-        }
-
-        return bestMove;
+        // If none of the above then default to the base policy.
+        return BestOf<N>::Select(board, lastMove);
     }
 };
 

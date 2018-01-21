@@ -62,6 +62,8 @@ public:
 
     BitSet& operator|=(const BitSet&);
 
+    BitSet& operator&=(const BitSet&);
+
     // Get a string representation of this BitSet.
     std::string ToString() const;
 

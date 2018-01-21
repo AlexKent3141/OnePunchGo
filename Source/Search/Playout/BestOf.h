@@ -16,7 +16,7 @@ public:
         if (board.GameOver())
             return BadMove;
 
-        auto moves = board.GetRandomMoves(N, _gen);
+        auto moves = board.GetRandomLegalMoves(N, _gen);
 
         // Assess the randomly selected moves.
         double bestScore = -DBL_MAX;
@@ -34,9 +34,10 @@ public:
         return bestMove;
     }
 
-private:
+protected:
     RandomGenerator _gen;
 
+private:
     const double CaptureScore = 10;
     const double AtariScore = 5;
     const double SelfAtariScore = -8;

@@ -119,7 +119,7 @@ void Board::CloneFrom(const Board& other)
         BitSet* stones = new BitSet(*oc.Stones);
         BitSet* neighbours = new BitSet(*oc.Neighbours);
 
-        StoneChain c = { oc.Liberties, stones, neighbours, oc.Hash, oc.Ignore };
+        StoneChain c = { oc.Col, oc.Liberties, stones, neighbours, oc.Hash, oc.Ignore };
         _chains.push_back(c);
     }
 
@@ -264,7 +264,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
         // are no other moves available.
         if (!duringPlayout || moves.size() == 0)
         {
-            moves.push_back({this->_colourToMove, PassCoord, Legal});
+            moves.push_back({_colourToMove, PassCoord, Legal});
         }
     }
 
@@ -272,7 +272,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
 }
 
 // Get n random (legal) moves.
-std::vector<Move> Board::GetRandomMoves(size_t n, RandomGenerator& gen) const
+std::vector<Move> Board::GetRandomLegalMoves(size_t n, RandomGenerator& gen) const
 {
     std::vector<Move> moves;
     moves.reserve(n);
@@ -291,14 +291,85 @@ std::vector<Move> Board::GetRandomMoves(size_t n, RandomGenerator& gen) const
             loc = bsl[gen.Next(numEmpty)];
 
             MoveInfo info = CheckMove(loc);
-            if (info & Legal)
+            if (info & Legal && !(info & FillsEye))
             {
                 moves.push_back({_colourToMove, loc, info});
             }
         }
     }
 
+    // If not legal moves have been found then fall back on full moves search to ensure that the
+    // game is played out fully.
+
+    if (moves.size() == 0)
+    {
+        moves = GetMoves(true);
+    }
+
     return moves;
+}
+
+// Find a global move that is adjacent to an enemy group with the specified number of liberties.
+Move Board::GetRandomMoveAttackingLiberties(int liberties, RandomGenerator& gen) const
+{
+    std::vector<Move> attackingMoves;
+    for (const auto& chain : _chains)
+    {
+        if (!chain.Ignore && chain.Col != _colourToMove && chain.Liberties == liberties)
+        {
+            FindLegalLibertyMoves(chain, attackingMoves);
+        }
+    }
+
+    return attackingMoves.empty() ? BadMove : attackingMoves[gen.Next(attackingMoves.size())];
+}
+
+// Find a global move that is adjacent to a friendly group with only one liberty.
+Move Board::GetRandomMoveSaving(RandomGenerator& gen) const
+{
+    std::vector<Move> savingMoves;
+    for (const auto& chain : _chains)
+    {
+        if (!chain.Ignore && chain.Col == _colourToMove && chain.Liberties == 1)
+        {
+            FindLegalLibertyMoves(chain, savingMoves);
+        }
+    }
+
+    return savingMoves.empty() ? BadMove : savingMoves[gen.Next(savingMoves.size())];
+}
+
+// Find a move that is local to the previous move and is considered urgent.
+// Note: Adjacent includes moves that fill liberties on the last move's chain.
+Move Board::GetRandomMoveLocal(int lastCoord, MoveInfo urgent, RandomGenerator& gen) const
+{
+    std::vector<Move> localMoves;
+
+    const StoneChain& chain = _chains[_points[lastCoord].ChainId];
+    FindLegalLibertyMoves(chain, localMoves, urgent);
+
+    return localMoves.empty() ? BadMove : localMoves[gen.Next(localMoves.size())];
+}
+
+// Find the legal moves that are adjacent to the specified chain.
+void Board::FindLegalLibertyMoves(const StoneChain& chain, std::vector<Move>& moves, MoveInfo urgent) const
+{
+    BitSet libs(*chain.Neighbours);
+    libs &= *_empty;
+
+    int bit;
+    BitIterator it(libs);
+    while ((bit = it.Next()) != BitIterator::NoBit)
+    {
+        MoveInfo info = CheckMove(bit);
+        if (info & Legal)
+        {
+            if (urgent == 0 || info & urgent)
+            {
+                moves.push_back({_colourToMove, bit, info});
+            }
+        }
+    }
 }
 
 // Update the board state with the specified move.
@@ -548,7 +619,7 @@ void Board::CreateNewChainForMove(const Move& move, uint64_t moveHash)
     BitSet* stones = new BitSet(_boardArea);
     stones->Set(move.Coord);
 
-    StoneChain c = { neighbours->CountAnd(*_empty), stones, neighbours, moveHash, false };
+    StoneChain c = { move.Col, neighbours->CountAnd(*_empty), stones, neighbours, moveHash, false };
     _chains.push_back(c);
 
     pt.ChainId = _chains.size()-1;

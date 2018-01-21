@@ -19,6 +19,7 @@
 // A chain of stones.
 struct StoneChain 
 {
+    Colour Col;
     int Liberties;
     BitSet* Stones;
     BitSet* Neighbours;
@@ -79,8 +80,17 @@ public:
     // Get all moves available for the current colour.
     std::vector<Move> GetMoves(bool duringPlayout = false) const;
 
-    // Get n randomly chosen moves.
-    std::vector<Move> GetRandomMoves(size_t, RandomGenerator&) const;
+    // Get n randomly chosen legal moves.
+    std::vector<Move> GetRandomLegalMoves(size_t, RandomGenerator&) const;
+
+    // Get a random move which is adjacent to an enemy group with n liberties.
+    Move GetRandomMoveAttackingLiberties(int, RandomGenerator&) const;
+
+    // Get a random move which (potentially) saves a group from capture.
+    Move GetRandomMoveSaving(RandomGenerator&) const;
+
+    // Get a random move which is local move and is perceived as urgent.
+    Move GetRandomMoveLocal(int, MoveInfo, RandomGenerator&) const;
 
     // Update the board state with the specified move.
     void MakeMove(const Move&);
@@ -117,6 +127,8 @@ private:
 
     // Check whether the specified move and capture would result in a board repetition.
     bool IsKoRepetition(Colour, int, int) const;
+
+    void FindLegalLibertyMoves(const StoneChain&, std::vector<Move>&, MoveInfo urgent = 0) const;
 
     // Count the liberties of the given chain.
     int CountChainLiberties(int) const;

@@ -4,4 +4,4 @@
 #include "Search/Playout/BiasedBestOf.h"
 
 // This typedef defines the best search type found so far.
-typedef Search<MCRave, BestOf<4>> CurrentSearch;
+typedef Search<MCRave, BiasedBestOf<4>> CurrentSearch;

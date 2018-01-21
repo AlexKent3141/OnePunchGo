@@ -137,6 +137,14 @@ BitSet& BitSet::operator|=(const BitSet& other)
     return *this;
 }
 
+BitSet& BitSet::operator&=(const BitSet& other)
+{
+    assert(_numBits == other._numBits);
+    for (int i = 0; i < _numWords; i++)
+        _words[i] &= other._words[i];
+    return *this;
+}
+
 std::string BitSet::ToString() const
 {
     std::string s = "";
