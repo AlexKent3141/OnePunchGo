@@ -5,6 +5,7 @@
 #include "Globals.h"
 #include "Move.h"
 #include "MoveHistory.h"
+#include "RandomGenerator.h"
 #include "Rules.h"
 #include "Types.h"
 #include "Zobrist.h"
@@ -70,13 +71,16 @@ public:
     bool IsEye(Colour, int, int) const;
 
     // Check the legality of the specified move in this position.
-    MoveInfo CheckMove(int, bool duringPlayout = false) const;
+    MoveInfo CheckMove(int) const;
 
     // Check the legality of the specified move in this position.
-    MoveInfo CheckMove(Colour, int, bool duringPlayout = false) const;
+    MoveInfo CheckMove(Colour, int) const;
 
     // Get all moves available for the current colour.
     std::vector<Move> GetMoves(bool duringPlayout = false) const;
+
+    // Get n randomly chosen moves.
+    std::vector<Move> GetRandomMoves(size_t, RandomGenerator&) const;
 
     // Update the board state with the specified move.
     void MakeMove(const Move&);

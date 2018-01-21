@@ -76,6 +76,11 @@ int BitSet::Count() const
     return s;
 }
 
+int BitSet::Count(int w) const
+{
+    return Count(_words[w]);
+}
+
 int BitSet::CountAnd(const BitSet& other) const
 {
     assert(_numBits == other._numBits);
@@ -108,6 +113,20 @@ void BitSet::Invert()
         mask |= One << i;
 
     _words[_numWords-1] = ~_words[_numWords-1] & mask;
+}
+
+int BitSet::BitInWord(int wi, int n) const
+{
+    int b = -1;
+    Word w = _words[wi];
+    int i = 0;
+    while (i++ <= n)
+    {
+        b = __builtin_ffsll(w)-1;
+        w &= ~(One << b);
+    }
+
+    return b;
 }
 
 BitSet& BitSet::operator|=(const BitSet& other)
@@ -163,9 +182,9 @@ std::string BitSet::WordString(Word w) const
     return s;
 }
 
-int BitSetIterator::Next()
+int BitIterator::Next()
 {
-    if (_i == BitSetIterator::NoBit)
+    if (_i == BitIterator::NoBit)
         return _i;
 
     // Find the next set bit.
@@ -174,7 +193,44 @@ int BitSetIterator::Next()
         found = _bs.Test(_i);
 
     if (!found)
-        _i = BitSetIterator::NoBit;
+        _i = BitIterator::NoBit;
 
     return _i;
+}
+
+BitSelector::~BitSelector()
+{
+    if (_counts != nullptr)
+    {
+        delete[] _counts;
+        _counts = nullptr;
+    }
+}
+
+void BitSelector::InitialiseCounts()
+{
+    _counts = new int[_bs.NumWords()];
+    for (int i = 0; i < _bs.NumWords(); i++)
+        _counts[i] = _bs.Count(i);
+}
+
+int BitSelector::operator[](int n)
+{
+    int bit = 0;
+    bool found = false;
+    for (int w = 0; !found && w < _bs.NumWords(); w++)
+    {
+        if (n >= _counts[w])
+        {
+            n -= _counts[w];
+            bit += _counts[w];
+        }
+        else
+        {
+            found = true;
+            bit += _bs.BitInWord(w, n);
+        }
+    }
+
+    return bit;
 }

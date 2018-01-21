@@ -16,14 +16,13 @@ public:
         if (board.GameOver())
             return BadMove;
 
-        auto moves = board.GetMoves(true);
+        auto moves = board.GetRandomMoves(N, _gen);
 
+        // Assess the randomly selected moves.
         double bestScore = -DBL_MAX;
         Move bestMove = BadMove;
-        for (size_t i = 0; i < N; i++)
+        for (const Move& move : moves)
         {
-            // Choose a move randomly.
-            const Move& move = moves[_gen.Next(moves.size())];
             double score = MoveScore(move);
             if (score > bestScore)
             {

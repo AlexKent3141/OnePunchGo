@@ -46,6 +46,9 @@ public:
     // Count the number of set bits.
     int Count() const;
 
+    // Count the number of set bits in the specified word.
+    int Count(int) const;
+
     // Count the number of set bits in the bitwise AND of this and another BitSet.
     int CountAnd(const BitSet&) const;
 
@@ -53,6 +56,9 @@ public:
 
     // Invert this BitSet in place.
     void Invert();
+
+    // Get the index of the n-th set bit in the word.
+    int BitInWord(int, int) const;
 
     BitSet& operator|=(const BitSet&);
 
@@ -69,25 +75,46 @@ private:
     int _numWords;
     int _numBits;
 
-    int Count(Word) const;
-    int CountSparse(Word) const;
-
     // Get a string representation for the word.
     std::string WordString(Word) const;
+    
+    int Count(Word) const;
+
+    int CountSparse(Word) const;
 };
 
 // This object allows iteration over the positions of the set bits in a BitSet.
-class BitSetIterator
+class BitIterator
 {
 public:
     static const int NoBit = -2;
 
-    BitSetIterator(const BitSet& bs) : _bs(bs), _i(-1) { }
+    BitIterator(const BitSet& bs) : _bs(bs), _i(-1) { }
     int Next();
 
 private:
     const BitSet& _bs;
     int _i;
+};
+
+// This object allows bits to be selected by index efficiently.
+class BitSelector
+{
+public:
+    BitSelector(const BitSet& bs) : _bs(bs)
+    {
+        InitialiseCounts();
+    }
+
+    ~BitSelector();
+
+    int operator[](int);
+
+private:
+    const BitSet& _bs;
+    int* _counts = nullptr;
+
+    void InitialiseCounts();
 };
 
 #endif // __BITSET_H__

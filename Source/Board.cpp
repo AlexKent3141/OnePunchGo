@@ -71,20 +71,20 @@ Board::~Board()
         _whiteStones = nullptr;
     }
 
-  //auto it = _chains.begin();
-  //while (it != _chains.end())
-  //{
-  //    StoneChain* c = *it;
-  //    if (c != nullptr)
-  //    {
-  //        delete c->Stones;
-  //        delete c->Neighbours;
-  //        delete c;
-  //        c = nullptr;
-  //    }
+    for (StoneChain& sc : _chains)
+    {
+        if (sc.Stones != nullptr)
+        {
+            delete sc.Stones;
+            sc.Stones = nullptr;
+        }
 
-  //    ++it;
-  //}
+        if (sc.Neighbours != nullptr)
+        {
+            delete sc.Neighbours;
+            sc.Neighbours = nullptr;
+        }
+    }
 }
 
 // Clone fields from other.
@@ -155,13 +155,13 @@ bool Board::IsEye(Colour col, int loc, int orth) const
 }
 
 // Check the legality of the specified move in this position.
-MoveInfo Board::CheckMove(int loc, bool duringPlayout) const
+MoveInfo Board::CheckMove(int loc) const
 {
-    return CheckMove(_colourToMove, loc, duringPlayout);
+    return CheckMove(_colourToMove, loc);
 }
 
 // Check the legality of the specified move in this position.
-MoveInfo Board::CheckMove(Colour col, int loc, bool duringPlayout) const
+MoveInfo Board::CheckMove(Colour col, int loc) const
 {
     // Passing is always legal.
     if (loc == PassCoord)
@@ -237,7 +237,7 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
         PatternMatcher matcher;
         for (int i = 0; i < _boardArea; i++)
         {
-            MoveInfo info = CheckMove(i, duringPlayout);
+            MoveInfo info = CheckMove(i);
             if (info & Legal)
             {
                 if (!duringPlayout)
@@ -265,6 +265,36 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
         if (!duringPlayout || moves.size() == 0)
         {
             moves.push_back({this->_colourToMove, PassCoord, Legal});
+        }
+    }
+
+    return moves;
+}
+
+// Get n random (legal) moves.
+std::vector<Move> Board::GetRandomMoves(size_t n, RandomGenerator& gen) const
+{
+    std::vector<Move> moves;
+    moves.reserve(n);
+    if (!GameOver())
+    {
+        // Can easily generate candidate moves by looking at the empty locations.
+        int numEmpty = _empty->Count();
+        assert(numEmpty != 0);
+
+        int maxAttempts = 5*n;
+        int a = 0, loc;
+        BitSelector bsl(*_empty);
+        while (a++ < maxAttempts && moves.size() < n)
+        {
+            // Check a random empty point for validity.
+            loc = bsl[gen.Next(numEmpty)];
+
+            MoveInfo info = CheckMove(loc);
+            if (info & Legal)
+            {
+                moves.push_back({_colourToMove, loc, info});
+            }
         }
     }
 
@@ -483,8 +513,8 @@ uint64_t Board::CaptureChain(int id)
 {
     StoneChain& chain = _chains[id];
     int bit;
-    BitSetIterator it(*chain.Stones);
-    while ((bit = it.Next()) != BitSetIterator::NoBit)
+    BitIterator it(*chain.Stones);
+    while ((bit = it.Next()) != BitIterator::NoBit)
     {
         Point& pt = _points[bit];
         pt.Col = None;
@@ -563,8 +593,8 @@ void Board::CombineChainsForMove(const Move& move, uint64_t moveHash, const std:
 
             // Change the labels on the stones in the neighbour chain.
             int bit;
-            BitSetIterator it(*n.Stones);
-            while ((bit = it.Next()) != BitSetIterator::NoBit)
+            BitIterator it(*n.Stones);
+            while ((bit = it.Next()) != BitIterator::NoBit)
             {
                 Point& pt = _points[bit];
                 pt.ChainId = nc;
