@@ -5,12 +5,13 @@
 #include <cstdint>
 #include <string>
 
+typedef uint64_t Word;
+
+const Word One = 1;
+
 // Bit set class which is used for quick board-wise operations.
 class BitSet
 {
-private:
-    typedef uint64_t Word;
-
 public:
     BitSet() = delete;
     BitSet(int);
@@ -71,7 +72,6 @@ public:
 
 private:
     const int WordSize = 64;
-    const Word One = 1;
 
     // This is the internal representation of the bits.
     Word* _words = nullptr;
@@ -93,12 +93,17 @@ class BitIterator
 public:
     static const int NoBit = -2;
 
-    BitIterator(const BitSet& bs) : _bs(bs), _i(-1) { }
+    BitIterator(const BitSet& bs) : _bs(bs), _wi(0), _i(-1)
+    {
+        _cw = _bs.GetWord(0);
+    }
+
     int Next();
 
 private:
     const BitSet& _bs;
-    int _i;
+    int _wi, _i;
+    Word _cw;
 };
 
 // This object allows bits to be selected by index efficiently.

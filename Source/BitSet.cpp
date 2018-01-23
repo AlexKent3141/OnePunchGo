@@ -197,13 +197,26 @@ int BitIterator::Next()
 
     // Find the next set bit.
     bool found = false;
-    while (!found && ++_i < _bs.NumBits())
-        found = _bs.Test(_i);
+    while (!found && _wi < _bs.NumWords())
+    {
+        _i = __builtin_ffsll(_cw)-1;
+        if (_i < 0)
+        {
+            // Move to next word.
+            _cw = ++_wi < _bs.NumWords() ? _bs.GetWord(_wi) : 0;
+        }
+        else
+        {
+            // Found a bit, turn it off in the current word.
+            _cw &= ~(One << _i);
+            found = true;
+        }
+    }
 
     if (!found)
         _i = BitIterator::NoBit;
 
-    return _i;
+    return found ? _i + _wi*_bs.GetWordSize() : _i;
 }
 
 BitSelector::~BitSelector()
