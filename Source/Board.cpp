@@ -234,29 +234,12 @@ std::vector<Move> Board::GetMoves(bool duringPlayout) const
     moves.reserve(_empty->Count());
     if (!GameOver())
     {
-        PatternMatcher matcher;
         for (int i = 0; i < _boardArea; i++)
         {
             MoveInfo info = CheckMove(i);
-            if (info & Legal)
+            if ((info & Legal) && !(info & FillsEye))
             {
-                if (!duringPlayout)
-                {
-                    if (matcher.HasMatch(*this, 3, i))
-                    {
-                        info |= Pat3Match;
-                    }
-
-                    if (matcher.HasMatch(*this, 5, i))
-                    {
-                        info |= Pat5Match;
-                    }
-                }
-
-                if (!(info & FillsEye))
-                {
-                    moves.push_back({_colourToMove, i, info});
-                }
+                moves.push_back({_colourToMove, i, info});
             }
         }
 
