@@ -291,17 +291,18 @@ std::vector<Move> Board::GetRandomLegalMoves(size_t n, RandomGenerator& gen) con
             loc = bsl[gen.Next(numEmpty)];
 
             MoveInfo info = CheckMove(loc);
-            if (info & Legal && !(info & FillsEye))
+            bool legal = info & Legal;
+            bool fillsEye = info & FillsEye;
+            if (legal && !fillsEye)
             {
                 moves.push_back({_colourToMove, loc, info});
             }
         }
     }
 
-    // If not legal moves have been found then fall back on full moves search to ensure that the
+    // If no legal moves have been found then fall back on full moves search to ensure that the
     // game is played out fully.
-
-    if (moves.size() == 0)
+    if (moves.empty())
     {
         moves = GetMoves(true);
     }
@@ -341,12 +342,28 @@ Move Board::GetRandomMoveSaving(RandomGenerator& gen) const
 
 // Find a move that is local to the previous move and is considered urgent.
 // Note: Adjacent includes moves that fill liberties on the last move's chain.
-Move Board::GetRandomMoveLocal(int lastCoord, MoveInfo urgent, RandomGenerator& gen) const
+Move Board::GetRandomMoveLocal(int c, MoveInfo urgent, RandomGenerator& gen) const
 {
+    assert(c != PassCoord);
     std::vector<Move> localMoves;
 
-    const StoneChain& chain = _chains[_points[lastCoord].ChainId];
-    FindLegalLibertyMoves(chain, localMoves, urgent);
+    // Use the "old" method for now.
+    const Point& pt = _points[c];
+    int m;
+    BitIterator it(*pt.Orthogonals);
+    while ((m = it.Next()) != BitIterator::NoBit)
+    {
+        // Test this location.
+        MoveInfo info = CheckMove(m);
+        if ((info & Legal) && (info & urgent))
+        {
+            localMoves.push_back({_colourToMove, m, info});
+        }
+    }
+
+    // "New" method which crashes sometimes...
+  //const StoneChain& chain = _chains[_points[lastCoord].ChainId];
+  //FindLegalLibertyMoves(chain, localMoves, urgent);
 
     return localMoves.empty() ? BadMove : localMoves[gen.Next(localMoves.size())];
 }
@@ -364,7 +381,7 @@ void Board::FindLegalLibertyMoves(const StoneChain& chain, std::vector<Move>& mo
         MoveInfo info = CheckMove(bit);
         if (info & Legal)
         {
-            if (urgent == 0 || info & urgent)
+            if (urgent == 0 || (info & urgent))
             {
                 moves.push_back({_colourToMove, bit, info});
             }

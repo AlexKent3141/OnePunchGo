@@ -231,7 +231,7 @@ int BitSelector::operator[](int n)
         if (n >= _counts[w])
         {
             n -= _counts[w];
-            bit += _counts[w];
+            bit += _bs.GetWordSize();
         }
         else
         {

@@ -27,6 +27,8 @@ public:
         return _words[i];
     }
 
+    inline int GetWordSize() const { return WordSize; }
+
     void Copy(const BitSet&);
 
     // Set the specified bit.
