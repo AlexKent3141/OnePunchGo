@@ -116,6 +116,7 @@ private:
         {
             std::lock_guard<std::mutex> lk(current->Obj);
             current = _sp->Select(current->Children);
+            current->Stats.VirtualLoss();
 
             const Move& move = current->Stats.LastMove;
             temp.MakeMove(move);
@@ -132,20 +133,10 @@ private:
     }
 
     // Expand the chosen leaf node.
-    // The virtual loss implementation is currently rather confusing.
-    // We need to ensure that all of the nodes we have selected are affected, which is a little
-    // awkward with the locks in place.
     Node* Expand(Board& temp, Node* leaf, Colour* playerOwned) const
     {
         Node* expanded = leaf;
         std::lock_guard<std::mutex> lk(expanded->Obj);
-        expanded->Stats.VirtualLoss();
-
-        if (expanded->Parent != nullptr)
-        {
-            AddVirtualLoss(expanded->Parent);
-        }
-
         if (!expanded->FullyExpanded())
         {
             expanded = expanded->ExpandNext();
@@ -183,17 +174,6 @@ private:
         }
 
         return temp.Score();
-    }
-
-    // Add virtual losses to the leaf and all nodes above.
-    void AddVirtualLoss(Node* leaf) const
-    {
-        while (leaf != nullptr)
-        {
-            std::lock_guard<std::mutex> lk(leaf->Obj);
-            leaf->Stats.VirtualLoss();
-            leaf = leaf->Parent;
-        }
     }
 
     // Backpropagate the score from the simulation up the tree.
