@@ -104,6 +104,7 @@ void Board::CloneFrom(const Board& other)
 
     _colourToMove = other._colourToMove;
     _turnNumber = other._turnNumber;
+    _lastMove = other._lastMove;
     _hashes = other._hashes;
     memcpy(_passes, other._passes, 2*sizeof(bool));
 
@@ -179,6 +180,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         size_t friendlyOrthogonals = 0;
         bool friendInAtari = false;
         bool isAtari = false;
+        bool isLocal = false;
         for (const Point* const n : pt.Neighbours)
         {
             const StoneChain& c = _chains[n->ChainId];
@@ -206,6 +208,8 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
                 {
                     isAtari = true;
                 }
+
+                isLocal |= n->Coord == _lastMove.Coord;
             }
         }
 
@@ -221,6 +225,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             if (capturesWithRepetition > 0) res |= Capture;
             if (friendInAtari && liberties > 1) res |= Save;
             if (IsEye(col, loc, friendlyOrthogonals)) res |= FillsEye;
+            if (isLocal) res |= Local;
         }
     }
 
@@ -435,6 +440,7 @@ void Board::MakeMove(const Move& move)
 
     _hashes.push_back(nextHash);
     _passes[(int)move.Col-1] = move.Coord == PassCoord;
+    _lastMove = move;
     ++_turnNumber;
 }
 
