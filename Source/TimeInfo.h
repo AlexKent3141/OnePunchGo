@@ -15,6 +15,8 @@ public:
     TimeInfo(int mainTime, int byoyomiTime, int byoyomiStones) :
         _mainTime(mainTime), _byoyomiTime(byoyomiTime), _byoyomiStones(byoyomiStones)
     {
+        // Default the remaining time sensibly.
+        TimeLeft(mainTime, 0);
     }
 
     void TimeLeft(int timeLeft, int stonesLeft)
