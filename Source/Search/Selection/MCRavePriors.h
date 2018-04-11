@@ -25,10 +25,10 @@ private:
     // Number of visits added and number of wins in those visits.
     typedef std::pair<int, int> Prior;
 
-    const Prior& CapturePrior = { 30, 30 };
-    const Prior& SavePrior = { 20, 20 };
-    const Prior& SelfAtariPrior = { 20, 0 };
-    const Prior& LocalPrior = { 30, 30 };
+    Prior CapturePrior = { 30, 30 };
+    Prior SavePrior = { 20, 20 };
+    Prior SelfAtariPrior = { 20, 0 };
+    Prior LocalPrior = { 30, 30 };
 
     void PriorUpdateAll(MoveStats& stats) const
     {
