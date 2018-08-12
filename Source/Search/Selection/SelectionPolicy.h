@@ -10,14 +10,21 @@
 class SelectionPolicy
 {
 public:
-    virtual Node* Select(const std::vector<Node*>& children) const
+    virtual Node* Select(const Board& board, const std::vector<Node*>& children) const
     {
         return children[0];
     }
 
     virtual ~SelectionPolicy() {}
 
+    void UseNN(bool use)
+    {
+        _useNN = use;
+    }
+
 protected:
+    bool _useNN = false;
+
     template<typename T>
     T* ArgMax(const std::vector<T*>& args, std::function<double(T* const)> score) const
     {

@@ -21,6 +21,11 @@ public:
         _gen = gen;
         _sp = new SP();
         _pp = new PP();
+
+        if (pos.Size() == 19)
+        {
+            _sp->UseNN(true);
+        }
     }
 
     ~TreeWorker()
@@ -115,7 +120,7 @@ private:
         while (current->FullyExpanded() && current->HasChildren())
         {
             std::lock_guard<std::mutex> lk(current->Obj);
-            current = _sp->Select(current->Children);
+            current = _sp->Select(temp, current->Children);
             current->Stats.VirtualLoss();
 
             const Move& move = current->Stats.LastMove;

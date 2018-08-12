@@ -2,6 +2,7 @@
 #define __MC_RAVE_PRIORS_H__
 
 #include "MCRave.h"
+#include "../../NeuralNet.h"
 #include <utility>
 #include <cassert>
 
@@ -9,14 +10,25 @@
 class MCRavePriors : public MCRave
 {
 public:
-    Node* Select(const std::vector<Node*>& children) const
+    Node* Select(const Board& board, const std::vector<Node*>& children) const
     {
-        for (Node* const c : children)
+        // Prioritise the nodes if not already done.
+        if (!children.empty() && !children[0]->Stats.Prioritised)
         {
-            PriorUpdateAll(c->Stats);
+            if (_useNN)
+            {
+                // Update the stats with the neural network output for this board state.
+                assert(board.Size() == 19);
+                NetworkValue(board, children);
+            }
+
+            for (Node* const c : children)
+            {
+                PriorUpdate(c->Stats);
+            }
         }
 
-        return MCRave::Select(children);
+        return MCRave::Select(board, children);
     }
 
 private:
@@ -25,21 +37,28 @@ private:
     // Number of visits added and number of wins in those visits.
     typedef std::pair<int, int> Prior;
 
+    // These priors are tied to the move type.
+    // If using a neural network for selection then ignore these.
     Prior CapturePrior = { 30, 30 };
     Prior SavePrior = { 20, 20 };
     Prior SelfAtariPrior = { 20, 0 };
     Prior LocalPrior = { 30, 30 };
 
-    void PriorUpdateAll(MoveStats& stats) const
+    const int MaxNetPrior = 100;
+
+    void PriorUpdate(MoveStats& stats) const
     {
-        if (!stats.Prioritised)
+        PriorUpdate(stats, Capture, CapturePrior);
+        PriorUpdate(stats, Save, SavePrior);
+        PriorUpdate(stats, SelfAtari, SelfAtariPrior);
+        PriorUpdate(stats, Local, LocalPrior);
+
+        if (_useNN)
         {
-            PriorUpdate(stats, Capture, CapturePrior);
-            PriorUpdate(stats, Save, SavePrior);
-            PriorUpdate(stats, SelfAtari, SelfAtariPrior);
-            PriorUpdate(stats, Local, LocalPrior);
-            stats.Prioritised = true;
+            NetPriorUpdate(stats);
         }
+
+        stats.Prioritised = true;
     }
 
     void PriorUpdate(MoveStats& stats, MoveInfo moveType, const Prior& prior) const
@@ -49,6 +68,23 @@ private:
             // Apply the priors to the RAVE values so that they effect early selections.
             stats.RaveVisits += prior.first;
             stats.RaveWins += prior.second;
+        }
+    }
+
+    void NetPriorUpdate(MoveStats& stats) const
+    {
+        int netPrior = stats.NetValue * MaxNetPrior;
+        stats.RaveVisits += netPrior;
+        stats.RaveWins += netPrior;
+    }
+
+    void NetworkValue(const Board& board, const std::vector<Node*>& children) const
+    {
+        std::vector<double> values = NeuralNet::Select(board);
+        for (auto& child : children)
+        {
+            MoveStats& stats = child->Stats;
+            stats.NetValue = values[stats.LastMove.Coord];
         }
     }
 };

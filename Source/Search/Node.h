@@ -16,6 +16,8 @@ struct MoveStats
     int RaveVisits;
     int RaveWins;
 
+    double NetValue;
+
     bool Prioritised;
 
     // Add a virtual loss.
@@ -94,7 +96,7 @@ struct Node
     {
         assert(!FullyExpanded());
         Node* next = new Node;
-        next->Stats = { Moves[Unexpanded++], 0, 0, 0, 0, false };
+        next->Stats = { Moves[Unexpanded++], 0, 0, 0, 0, 0, false };
         next->Unexpanded = 0;
         next->Parent = this;
         Children.push_back(next);

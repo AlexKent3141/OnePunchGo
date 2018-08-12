@@ -1,10 +1,10 @@
 #ifndef __MC_RAVE_H__
 #define __MC_RAVE_H__
 
-class MCRave : SelectionPolicy
+class MCRave : public SelectionPolicy
 {
 public:
-    Node* Select(const std::vector<Node*>& children) const
+    Node* Select(const Board& board, const std::vector<Node*>& children) const
     {
         auto score = std::bind(&MCRave::NodeScore, *this, std::placeholders::_1);
         return ArgMax<Node>(children, score);
