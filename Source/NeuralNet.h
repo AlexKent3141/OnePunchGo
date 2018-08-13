@@ -7,7 +7,7 @@ extern "C"
 }
 
 #include "Board.h"
-#include <iostream>
+#include <mutex>
 
 // This singleton class wraps up the neural network(s).
 class NeuralNet
@@ -23,23 +23,22 @@ public:
     }
 
     // Use the selection network to prioritise the moves for this board state.
-    static std::vector<double> Select(const Board& board)
+    static std::vector<double> Select(const Board& board, double& total)
     {
+        std::unique_lock<std::mutex> lk(*_msel);
         if (_selection == nullptr)
         {
             _selection = new NeuralNet("sel.cfg", "sel.weights");
         }
 
-        return _selection->Evaluate(board);
+        return _selection->Evaluate(board, total);
     }
 
-    std::vector<double> Evaluate(const Board& board)
+    std::vector<double> Evaluate(const Board& board, double& total)
     {
-        std::cout << "Evaluating board" << std::endl;
         assert(board.Size() == 19);
         float* inputs = GetInputs(board);
         float* eval = network_predict(_nn, inputs);
-        std::cout << "Predicted" << std::endl;
         delete[] inputs;
 
         // Normalise the outputs.
@@ -52,14 +51,17 @@ public:
             }
         }
 
-        std::cout << "Largest: " << largest << std::endl;
         assert(largest > 0);
 
+        total = 0;
+        double out;
         std::vector<double> outputs;
         outputs.reserve(361);
         for (int i = 0; i < 361; i++)
         {
-            outputs.push_back(eval[i] / largest);
+            out = eval[i] / largest;
+            total += out;
+            outputs.push_back(out);
         }
 
         return outputs;
@@ -68,6 +70,7 @@ public:
 private:
     // The move selection.
     static NeuralNet* _selection;
+    static std::mutex* _msel;
 
     network* _nn = nullptr;
 

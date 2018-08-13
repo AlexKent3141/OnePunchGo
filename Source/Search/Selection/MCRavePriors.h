@@ -44,7 +44,7 @@ private:
     Prior SelfAtariPrior = { 20, 0 };
     Prior LocalPrior = { 30, 30 };
 
-    const int MaxNetPrior = 100;
+    const int MaxNetPrior = 200;
 
     void PriorUpdate(MoveStats& stats) const
     {
@@ -80,7 +80,8 @@ private:
 
     void NetworkValue(const Board& board, const std::vector<Node*>& children) const
     {
-        std::vector<double> values = NeuralNet::Select(board);
+        double total;
+        std::vector<double> values = NeuralNet::Select(board, total);
         for (auto& child : children)
         {
             MoveStats& stats = child->Stats;
