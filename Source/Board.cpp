@@ -1,5 +1,4 @@
 #include "Board.h"
-#include "Patterns/PatternMatcher.h"
 #include <iostream>
 
 Board::Board(int boardSize)
