@@ -6,6 +6,7 @@
 #include "Playout/PlayoutPolicy.h"
 #include "Selection/SelectionPolicy.h"
 #include "../RandomGenerator.h"
+#include "../NeuralNet.h"
 #include <mutex>
 #include <thread>
 
@@ -15,21 +16,23 @@ template<class SP, class PP>
 class TreeWorker
 {
 public:
-    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen) : _pos(&pos)
+    TreeWorker(size_t id, const Board& pos, Node* root, RandomGenerator* gen, bool useNN) : _pos(&pos)
     {
         _root = root;
         _gen = gen;
         _sp = new SP();
         _pp = new PP();
 
-        if (pos.Size() == 19)
+        if (useNN)
         {
-            _sp->UseNN(true);
+            _net = NeuralNet::GetSelectionNetwork(id);
         }
     }
 
     ~TreeWorker()
     {
+        Stop();
+
         if (_gen != nullptr)
         {
             delete _gen;
@@ -72,6 +75,7 @@ private:
     SP* _sp = nullptr;
     PP* _pp = nullptr;
     RandomGenerator* _gen = nullptr;
+    NeuralNet* _net = nullptr;
     Board const* _pos;
     std::mutex _mtx;
 
@@ -117,10 +121,10 @@ private:
     Node* Select(Board& temp, Node* root, Colour* playerOwned)
     {
         Node* current = root;
-        while (current->FullyExpanded() && current->HasChildren())
+        while (current->HasChildren())
         {
             std::lock_guard<std::mutex> lk(current->Obj);
-            current = _sp->Select(temp, current->Children);
+            current = _sp->Select(temp, current->Children, _net);
             current->Stats.VirtualLoss();
 
             const Move& move = current->Stats.LastMove;
@@ -140,16 +144,18 @@ private:
     // Expand the chosen leaf node.
     Node* Expand(Board& temp, Node* leaf, Colour* playerOwned) const
     {
-        Node* expanded = leaf;
-        std::lock_guard<std::mutex> lk(expanded->Obj);
-        if (!expanded->FullyExpanded())
-        {
-            expanded = expanded->ExpandNext();
+        Node* current = leaf;
+        std::lock_guard<std::mutex> lk(current->Obj);
 
-            const Move& move = expanded->Stats.LastMove;
+        // Expand the selected node.
+        current->Expand(temp.GetMoves());
+        if (current->HasChildren())
+        {
+            current = _sp->Select(temp, current->Children, _net);
+            current->Stats.VirtualLoss();
+
+            const Move& move = current->Stats.LastMove;
             temp.MakeMove(move);
-            expanded->Moves = temp.GetMoves();
-            expanded->Stats.VirtualLoss();
 
             // Update the ownership map.
             int coord = move.Coord;
@@ -159,7 +165,7 @@ private:
             }
         }
 
-        return expanded;
+        return current;
     }
 
     // Perform a simulation from the specified game state.

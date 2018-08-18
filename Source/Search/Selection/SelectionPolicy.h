@@ -2,6 +2,7 @@
 #define __SELECTION_POLICY_H__
 
 #include "../Node.h"
+#include "../../NeuralNet.h"
 #include <cfloat>
 #include <vector>
 #include <functional>
@@ -10,21 +11,14 @@
 class SelectionPolicy
 {
 public:
-    virtual Node* Select(const Board& board, const std::vector<Node*>& children) const
+    virtual Node* Select(const Board& board, const std::vector<Node*>& children, NeuralNet* net) const
     {
         return children[0];
     }
 
     virtual ~SelectionPolicy() {}
 
-    void UseNN(bool use)
-    {
-        _useNN = use;
-    }
-
 protected:
-    bool _useNN = false;
-
     template<typename T>
     T* ArgMax(const std::vector<T*>& args, std::function<double(T* const)> score) const
     {

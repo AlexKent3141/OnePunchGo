@@ -7,6 +7,7 @@
 #include "Playout/PlayoutPolicy.h"
 #include "Selection/SelectionPolicy.h"
 #include "../RandomGenerator.h"
+#include "../NeuralNet.h"
 #include "TreeWorker.h"
 #include <mutex>
 #include <thread>
@@ -51,10 +52,24 @@ public:
     // Kick off the searching threads.
     void Start(const Board& pos)
     {
+        // Check whether neural nets should be enabled.
+        // These are used by default for 19x19, but cannot currently be used with other sizes.
+        int useNN = pos.Size() == 19;
+        auto args = Args::Get();
+        if (args->TryParse("-nn", useNN) && useNN)
+        {
+            assert(pos.Size() == 19);
+        }
+
+        if (useNN)
+        {
+            NeuralNet::InitialiseSelectionNets(_numWorkersToUse);
+        }
+
         // Create the root of the tree.
         if (_root != nullptr) delete _root;
         _root = MakeRoot();
-        _root->Moves = pos.GetMoves();
+        _root->Expand(pos.GetMoves());
 
         // Create a PRNG which is used to seed each worker's PRNG.
         RandomGenerator seeder;
@@ -66,7 +81,7 @@ public:
         for (int i = 0; i < _numWorkersToUse; i++)
         {
             auto gen = new RandomGenerator(seeder.Next());
-            _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen));
+            _workers.push_back(new TreeWorker<SP, PP>(i, pos, _root, gen, useNN));
         }
 
         // Start the workers.

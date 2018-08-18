@@ -4,7 +4,7 @@
 class MCRave : public SelectionPolicy
 {
 public:
-    Node* Select(const Board& board, const std::vector<Node*>& children) const
+    Node* Select(const Board& board, const std::vector<Node*>& children, NeuralNet* net) const
     {
         auto score = std::bind(&MCRave::NodeScore, *this, std::placeholders::_1);
         return ArgMax<Node>(children, score);

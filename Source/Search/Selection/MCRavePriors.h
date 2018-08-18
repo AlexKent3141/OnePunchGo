@@ -2,7 +2,6 @@
 #define __MC_RAVE_PRIORS_H__
 
 #include "MCRave.h"
-#include "../../NeuralNet.h"
 #include <utility>
 #include <cassert>
 
@@ -10,25 +9,26 @@
 class MCRavePriors : public MCRave
 {
 public:
-    Node* Select(const Board& board, const std::vector<Node*>& children) const
+    Node* Select(const Board& board, const std::vector<Node*>& children, NeuralNet* net) const
     {
         // Prioritise the nodes if not already done.
         if (!children.empty() && !children[0]->Stats.Prioritised)
         {
-            if (_useNN)
+            bool useNN = net != nullptr;
+            if (useNN && children[0]->Stats.Depth < 3)
             {
                 // Update the stats with the neural network output for this board state.
                 assert(board.Size() == 19);
-                NetworkValue(board, children);
+                NetworkValue(board, children, net);
             }
 
             for (Node* const c : children)
             {
-                PriorUpdate(c->Stats);
+                PriorUpdate(c->Stats, useNN);
             }
         }
 
-        return MCRave::Select(board, children);
+        return MCRave::Select(board, children, net);
     }
 
 private:
@@ -38,22 +38,22 @@ private:
     typedef std::pair<int, int> Prior;
 
     // These priors are tied to the move type.
-    // If using a neural network for selection then ignore these.
     Prior CapturePrior = { 30, 30 };
     Prior SavePrior = { 20, 20 };
     Prior SelfAtariPrior = { 20, 0 };
     Prior LocalPrior = { 30, 30 };
 
-    const int MaxNetPrior = 200;
+    // The maximum size of the neural network prior.
+    const int MaxNetPrior = 100;
 
-    void PriorUpdate(MoveStats& stats) const
+    void PriorUpdate(MoveStats& stats, bool useNN) const
     {
         PriorUpdate(stats, Capture, CapturePrior);
         PriorUpdate(stats, Save, SavePrior);
         PriorUpdate(stats, SelfAtari, SelfAtariPrior);
         PriorUpdate(stats, Local, LocalPrior);
 
-        if (_useNN)
+        if (useNN)
         {
             NetPriorUpdate(stats);
         }
@@ -78,14 +78,14 @@ private:
         stats.RaveWins += netPrior;
     }
 
-    void NetworkValue(const Board& board, const std::vector<Node*>& children) const
+    void NetworkValue(const Board& board, const std::vector<Node*>& children, NeuralNet* net) const
     {
         double total;
-        std::vector<double> values = NeuralNet::Select(board, total);
+        std::vector<double> values = net->Evaluate(board, total);
         for (auto& child : children)
         {
             MoveStats& stats = child->Stats;
-            stats.NetValue = values[stats.LastMove.Coord];
+            if (stats.LastMove.Coord >= 0) stats.NetValue = values[stats.LastMove.Coord];
         }
     }
 };

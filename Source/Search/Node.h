@@ -16,7 +16,11 @@ struct MoveStats
     int RaveVisits;
     int RaveWins;
 
+    // The neural network evaluation for the node.
     double NetValue;
+
+    // The depth of this node in the MCTS tree.
+    int Depth;
 
     bool Prioritised;
 
@@ -57,6 +61,7 @@ struct MoveStats
     // Get the probability of winning for this node.
     double WinningChance() const
     {
+        assert(Visits > 0);
         return (double)Wins / Visits;
     }
 };
@@ -65,9 +70,7 @@ struct MoveStats
 struct Node
 {
     MoveStats Stats;
-    size_t Unexpanded;
     Node* Parent;
-    std::vector<Move> Moves; // The moves that are available.
     std::vector<Node*> Children; // The child nodes.
     std::mutex Obj; // This is used to synchronise access to the node from each TreeWorker.
 
@@ -79,28 +82,22 @@ struct Node
         }
     }
 
-    // Check whether the node is fully expanded.
-    bool FullyExpanded() const
-    {
-        return Unexpanded >= Moves.size();
-    }
-
     // Check whether the node has children.
     bool HasChildren() const
     {
         return Children.size() > 0;
     }
 
-    // Expand the next available move.
-    Node* ExpandNext()
+    // Fully expand the node.
+    void Expand(const std::vector<Move>& moves)
     {
-        assert(!FullyExpanded());
-        Node* next = new Node;
-        next->Stats = { Moves[Unexpanded++], 0, 0, 0, 0, 0, false };
-        next->Unexpanded = 0;
-        next->Parent = this;
-        Children.push_back(next);
-        return next;
+        for (const Move& m : moves)
+        {
+            Node* next = new Node;
+            next->Stats = { m, 0, 0, 0, 0, 0, Stats.Depth + 1, false };
+            next->Parent = this;
+            Children.push_back(next);
+        }
     }
 };
 
@@ -109,7 +106,6 @@ inline Node* MakeRoot()
 {
     Node* root = new Node;
     root->Stats = {};
-    root->Unexpanded = 0;
     root->Parent = nullptr;
     return root;
 }

@@ -8,11 +8,26 @@ extern "C"
 
 #include "Board.h"
 #include <mutex>
+#include <vector>
 
 // This singleton class wraps up the neural network(s).
 class NeuralNet
 {
 public:
+    static void InitialiseSelectionNets(size_t numNets)
+    {
+        for (size_t i = _selNets.size(); i < numNets; i++)
+        {
+            _selNets.push_back(new NeuralNet("sel.cfg", "sel.weights"));
+        }
+    }
+
+    static NeuralNet* GetSelectionNetwork(size_t id)
+    {
+        assert(id < _selNets.size());
+        return _selNets[id];
+    }
+
     ~NeuralNet()
     {
         if (_nn != nullptr)
@@ -20,18 +35,6 @@ public:
             free_network(_nn);
             _nn = nullptr;
         }
-    }
-
-    // Use the selection network to prioritise the moves for this board state.
-    static std::vector<double> Select(const Board& board, double& total)
-    {
-        std::unique_lock<std::mutex> lk(*_msel);
-        if (_selection == nullptr)
-        {
-            _selection = new NeuralNet("sel.cfg", "sel.weights");
-        }
-
-        return _selection->Evaluate(board, total);
     }
 
     std::vector<double> Evaluate(const Board& board, double& total)
@@ -68,11 +71,8 @@ public:
     }
 
 private:
-    // The move selection.
-    static NeuralNet* _selection;
-    static std::mutex* _msel;
-
     network* _nn = nullptr;
+    static std::vector<NeuralNet*> _selNets;
 
     NeuralNet(const char* net, const char* weights)
     {
