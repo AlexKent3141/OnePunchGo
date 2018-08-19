@@ -147,21 +147,25 @@ private:
         Node* current = leaf;
         std::lock_guard<std::mutex> lk(current->Obj);
 
-        // Expand the selected node.
-        current->Expand(temp.GetMoves());
-        if (current->HasChildren())
+        // Expand the selected node (if it's been visited sufficiently many times).
+        const int MinVisitsForExpansion = 4;
+        if (current->Stats.Visits >= MinVisitsForExpansion)
         {
-            current = _sp->Select(temp, current->Children, _net);
-            current->Stats.VirtualLoss();
-
-            const Move& move = current->Stats.LastMove;
-            temp.MakeMove(move);
-
-            // Update the ownership map.
-            int coord = move.Coord;
-            if (coord != PassCoord && playerOwned[coord] == None)
+            current->Expand(temp.GetMoves());
+            if (current->HasChildren())
             {
-                playerOwned[coord] = move.Col;
+                current = _sp->Select(temp, current->Children, _net);
+                current->Stats.VirtualLoss();
+
+                const Move& move = current->Stats.LastMove;
+                temp.MakeMove(move);
+
+                // Update the ownership map.
+                int coord = move.Coord;
+                if (coord != PassCoord && playerOwned[coord] == None)
+                {
+                    playerOwned[coord] = move.Col;
+                }
             }
         }
 
