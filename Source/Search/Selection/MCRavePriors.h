@@ -44,7 +44,7 @@ private:
     Prior LocalPrior = { 30, 30 };
 
     // The maximum size of the neural network prior.
-    const int MaxNetPrior = 100;
+    const int MaxNetPrior = 200;
 
     void PriorUpdate(MoveStats& stats, bool useNN) const
     {
