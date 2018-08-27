@@ -6,6 +6,7 @@ extern "C"
     #include "darknet/darknet.h"
 }
 
+#include "Args.h"
 #include "Board.h"
 #include <mutex>
 #include <vector>
@@ -16,9 +17,16 @@ class NeuralNet
 public:
     static void InitialiseSelectionNets(size_t numNets)
     {
+        // Check whether a selection weights directory has been specified.
+        std::string selectionFolder = ".";
+        auto args = Args::Get();
+        args->TryParse("-sel", selectionFolder);
+
+        const std::string& configPath = selectionFolder + "/sel.cfg";
+        const std::string& weightsPath = selectionFolder + "/sel.weights";
         for (size_t i = _selNets.size(); i < numNets; i++)
         {
-            _selNets.push_back(new NeuralNet("sel.cfg", "sel.weights"));
+            _selNets.push_back(new NeuralNet(configPath, weightsPath));
         }
     }
 
@@ -74,9 +82,9 @@ private:
     network* _nn = nullptr;
     static std::vector<NeuralNet*> _selNets;
 
-    NeuralNet(const char* net, const char* weights)
+    NeuralNet(const std::string& net, const std::string& weights)
     {
-        _nn = load_network((char*)net, (char*)weights, 0);
+        _nn = load_network((char*)net.c_str(), (char*)weights.c_str(), 0);
     }
 
     float* GetInputs(const Board& board) const

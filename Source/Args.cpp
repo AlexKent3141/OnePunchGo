@@ -16,3 +16,16 @@ bool Args::TryParse<int>(const std::string& argName, int& val) const
 
     return success;
 }
+
+template<>
+bool Args::TryParse<std::string>(const std::string& argName, std::string& val) const
+{
+    bool success = false;
+    if (HasArg(argName))
+    {
+        val = _args.at(argName);
+        success = true;
+    }
+
+    return success;
+}
