@@ -18,7 +18,7 @@ public:
     static void InitialiseSelectionNets(size_t numNets)
     {
         // Check whether a selection weights directory has been specified.
-        std::string selectionFolder = ".";
+        std::string selectionFolder = "./selection_weights";
         auto args = Args::Get();
         args->TryParse("-sel", selectionFolder);
 
