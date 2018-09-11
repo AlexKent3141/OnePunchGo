@@ -25,7 +25,8 @@ public:
 
         if (useNN)
         {
-            _net = NeuralNet::GetSelectionNetwork(id);
+            _selNet = NeuralNet::GetSelectionNetwork(id);
+            _valNet = NeuralNet::GetValueNetwork(id);
         }
     }
 
@@ -75,7 +76,8 @@ private:
     SP* _sp = nullptr;
     PP* _pp = nullptr;
     RandomGenerator* _gen = nullptr;
-    NeuralNet* _net = nullptr;
+    NeuralNet* _selNet = nullptr;
+    NeuralNet* _valNet = nullptr;
     Board const* _pos;
     std::mutex _mtx;
 
@@ -124,7 +126,7 @@ private:
         while (current->HasChildren())
         {
             std::lock_guard<std::mutex> lk(current->Obj);
-            current = _sp->Select(temp, current->Children, _net);
+            current = _sp->Select(temp, current->Children, _selNet);
             current->Stats.VirtualLoss();
 
             const Move& move = current->Stats.LastMove;
@@ -154,7 +156,7 @@ private:
             current->Expand(temp.GetMoves());
             if (current->HasChildren())
             {
-                current = _sp->Select(temp, current->Children, _net);
+                current = _sp->Select(temp, current->Children, _selNet);
                 current->Stats.VirtualLoss();
 
                 const Move& move = current->Stats.LastMove;
@@ -175,6 +177,11 @@ private:
     // Perform a simulation from the specified game state.
     int Simulate(Board& temp, const Move& lastMove, Colour* playerOwned)
     {
+        if (_valNet != nullptr)
+        {
+            return NNScore(temp, playerOwned);
+        }
+
         // Make moves according to the playout policy until a terminal state is reached.
         Move move = lastMove;
         while ((move = _pp->Select(temp, move)) != BadMove)
@@ -189,6 +196,29 @@ private:
         }
 
         return temp.Score();
+    }
+
+    int NNScore(const Board& board, Colour* playerOwned)
+    {
+        // Feed the board through the value net.
+        double total;
+        std::vector<double> output = _valNet->Evaluate(board, total);
+
+        // Compute the score from the perspective of the player to move.
+        double count = 0;
+        for (const auto& out : output) count += (2*out - 1);
+
+        // Adjust the sign so that a black win would be positive.
+        if (board.ColourToMove() == White) count *= -1;
+
+        // Take komi into account.
+        count -= CurrentRules.Komi;
+
+        // Attempt to account for errors in the network evaluation.
+        const int PossibleError = 50;
+        double guessCount = count - PossibleError + _gen->NextDouble() * 2 * PossibleError;
+
+        return guessCount > 0 ? 1 : guessCount < 0 ? -1 : 0;
     }
 
     // Backpropagate the score from the simulation up the tree.

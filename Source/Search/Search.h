@@ -63,7 +63,7 @@ public:
 
         if (useNN)
         {
-            NeuralNet::InitialiseSelectionNets(_numWorkersToUse);
+            NeuralNet::InitialiseNets(_numWorkersToUse);
         }
 
         // Create the root of the tree.

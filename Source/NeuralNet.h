@@ -15,25 +15,37 @@ extern "C"
 class NeuralNet
 {
 public:
-    static void InitialiseSelectionNets(size_t numNets)
+    static void InitialiseNets(size_t numNets)
     {
-        // Check whether a selection weights directory has been specified.
+        // Check whether a selection/value weights directory has been specified.
         std::string selectionFolder = "./selection_weights";
+        std::string valueFolder = "./value_weights";
+
         auto args = Args::Get();
         args->TryParse("-sel", selectionFolder);
+        args->TryParse("-val", valueFolder);
 
-        const std::string& configPath = selectionFolder + "/sel.cfg";
-        const std::string& weightsPath = selectionFolder + "/sel.weights";
+        const std::string& selConfigPath = selectionFolder + "/sel.cfg";
+        const std::string& selWeightsPath = selectionFolder + "/sel.weights";
         for (size_t i = _selNets.size(); i < numNets; i++)
-        {
-            _selNets.push_back(new NeuralNet(configPath, weightsPath));
-        }
+            _selNets.push_back(new NeuralNet(selConfigPath, selWeightsPath));
+
+        const std::string& valConfigPath = valueFolder + "/val.cfg";
+        const std::string& valWeightsPath = valueFolder + "/val.weights";
+        for (size_t i = _valNets.size(); i < numNets; i++)
+            _valNets.push_back(new NeuralNet(valConfigPath, valWeightsPath));
     }
 
     static NeuralNet* GetSelectionNetwork(size_t id)
     {
         assert(id < _selNets.size());
         return _selNets[id];
+    }
+
+    static NeuralNet* GetValueNetwork(size_t id)
+    {
+        assert(id < _valNets.size());
+        return _valNets[id];
     }
 
     ~NeuralNet()
@@ -81,6 +93,7 @@ public:
 private:
     network* _nn = nullptr;
     static std::vector<NeuralNet*> _selNets;
+    static std::vector<NeuralNet*> _valNets;
 
     NeuralNet(const std::string& net, const std::string& weights)
     {
