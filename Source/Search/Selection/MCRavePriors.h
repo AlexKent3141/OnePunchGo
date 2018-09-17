@@ -15,7 +15,7 @@ public:
         if (!children.empty() && !children[0]->Stats.Prioritised)
         {
             bool useNN = net != nullptr;
-            if (useNN && children[0]->Stats.Depth < 3)
+            if (useNN)
             {
                 // Update the stats with the neural network output for this board state.
                 assert(board.Size() == 19);
@@ -73,7 +73,7 @@ private:
 
     void NetPriorUpdate(MoveStats& stats) const
     {
-        int netPrior = stats.NetValue * MaxNetPrior;
+        int netPrior = (stats.NetValue * MaxNetPrior) / stats.Depth;
         stats.RaveVisits += netPrior;
         stats.RaveWins += netPrior;
     }
