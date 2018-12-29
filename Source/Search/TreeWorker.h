@@ -122,11 +122,7 @@ private:
             temp.MakeMove(move);
 
             // Update the ownership map.
-            int coord = move.Coord;
-            if (coord != PassCoord && playerOwned[coord] == None)
-            {
-                playerOwned[coord] = move.Col;
-            }
+            UpdateOwnership(move, playerOwned);
         }
 
         return current;
@@ -147,11 +143,7 @@ private:
             expanded->Stats.VirtualLoss();
 
             // Update the ownership map.
-            int coord = move.Coord;
-            if (coord != PassCoord && playerOwned[coord] == None)
-            {
-                playerOwned[coord] = move.Col;
-            }
+            UpdateOwnership(move, playerOwned);
         }
 
         return expanded;
@@ -164,16 +156,21 @@ private:
         Move move = lastMove;
         while ((move = _pp->Select(temp, move)) != BadMove)
         {
-            int coord = move.Coord;
-            if (coord != PassCoord && playerOwned[coord] == None)
-            {
-                playerOwned[coord] = move.Col;
-            }
-
+            UpdateOwnership(move, playerOwned);
             temp.MakeMove(move);
         }
 
         return temp.Score();
+    }
+
+    // Update the ownership map used in RAVE calculations.
+    void UpdateOwnership(const Move& move, Colour* playerOwned) const
+    {
+        int coord = move.Coord;
+        if (coord != PassCoord && playerOwned[coord] == None)
+        {
+            playerOwned[coord] = move.Col;
+        }
     }
 
     // Backpropagate the score from the simulation up the tree.
