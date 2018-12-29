@@ -1,6 +1,8 @@
 #ifndef __MC_RAVE_H__
 #define __MC_RAVE_H__
 
+#include <cmath>
+
 class MCRave : SelectionPolicy
 {
 public:
