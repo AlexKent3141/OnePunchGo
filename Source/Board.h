@@ -68,13 +68,13 @@ public:
     // Clone fields from other.
     void CloneFrom(const Board&);
 
-    // Roughly check whether this point can possible be an eye.
+    // Roughly check whether this point can possibly be an eye.
     bool IsEye(Colour, int, int) const;
 
-    // Check the legality of the specified move in this position.
+    // Get the properties of the specified move in this position.
     MoveInfo CheckMove(int) const;
 
-    // Check the legality of the specified move in this position.
+    // Get the properties of the specified move in this position.
     MoveInfo CheckMove(Colour, int) const;
 
     // Get all moves available for the current colour.

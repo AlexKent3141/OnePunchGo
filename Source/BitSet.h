@@ -117,7 +117,7 @@ public:
 
     ~BitSelector();
 
-    int operator[](int);
+    int operator[](int) const;
 
 private:
     const BitSet& _bs;

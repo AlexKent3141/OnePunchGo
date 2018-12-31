@@ -16,12 +16,12 @@ struct Move
     int Coord;
     MoveInfo Info;
 
-    bool operator==(const Move& other)
+    bool operator==(const Move& other) const
     {
         return Col == other.Col && Coord == other.Coord;
     }
 
-    bool operator!=(const Move& other)
+    bool operator!=(const Move& other) const
     {
         return !(*this == other);
     }

@@ -97,7 +97,7 @@ private:
         }
     }
 
-    Node* SelectNode(Board& temp, Colour* playerOwned)
+    Node* SelectNode(Board& temp, Colour* playerOwned) const
     {
         // Find the leaf node which must be expanded.
         Node* leaf = Select(temp, _root, playerOwned);
@@ -109,7 +109,7 @@ private:
     }
 
     // Select a node to expand.
-    Node* Select(Board& temp, Node* root, Colour* playerOwned)
+    Node* Select(Board& temp, Node* root, Colour* playerOwned) const
     {
         Node* current = root;
         while (current->FullyExpanded() && current->HasChildren())
@@ -150,7 +150,7 @@ private:
     }
 
     // Perform a simulation from the specified game state.
-    int Simulate(Board& temp, const Move& lastMove, Colour* playerOwned)
+    int Simulate(Board& temp, const Move& lastMove, Colour* playerOwned) const
     {
         // Make moves according to the playout policy until a terminal state is reached.
         Move move = lastMove;

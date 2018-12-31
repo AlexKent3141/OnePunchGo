@@ -235,7 +235,7 @@ void BitSelector::InitialiseCounts()
         _counts[i] = _bs.Count(i);
 }
 
-int BitSelector::operator[](int n)
+int BitSelector::operator[](int n) const
 {
     int bit = 0;
     bool found = false;
