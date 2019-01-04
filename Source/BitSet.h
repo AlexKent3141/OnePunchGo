@@ -22,9 +22,10 @@ public:
 
     inline int NumBits() const { return _numBits; }
 
-    inline Word GetWord(int i) const
+    inline Word GetWord(size_t i) const
     {
         assert(i < _numWords);
+        assert(_words != nullptr);
         return _words[i];
     }
 
@@ -76,7 +77,7 @@ private:
     // This is the internal representation of the bits.
     Word* _words = nullptr;
 
-    int _numWords;
+    size_t _numWords;
     int _numBits;
 
     // Get a string representation for the word.

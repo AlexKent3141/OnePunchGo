@@ -45,7 +45,7 @@ void BitSet::Set(int b)
 void BitSet::Set(const BitSet& other)
 {
     assert(_numBits == other._numBits);
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         _words[i] |= other._words[i];
 }
 
@@ -58,7 +58,7 @@ void BitSet::UnSet(int b)
 void BitSet::UnSet(const BitSet& other)
 {
     assert(_numBits == other._numBits);
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         _words[i] &= ~other._words[i];
 }
 
@@ -71,7 +71,7 @@ bool BitSet::Test(int b) const
 int BitSet::Count() const
 {
     int s = 0;
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         s += Count(_words[i]);
     return s;
 }
@@ -85,7 +85,7 @@ int BitSet::CountAnd(const BitSet& other) const
 {
     assert(_numBits == other._numBits);
     int s = 0;
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         s += Count(_words[i] & other._words[i]);
     return s;
 }
@@ -94,14 +94,14 @@ int BitSet::CountAndSparse(const BitSet& other) const
 {
     assert(_numBits == other._numBits);
     int s = 0;
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         s += CountSparse(_words[i] & other._words[i]);
     return s;
 }
 
 void BitSet::Invert()
 {
-    for (int i = 0; i < _numWords-1; i++)
+    for (size_t i = 0; i < _numWords-1; i++)
         _words[i] = ~_words[i];
 
     // Deal with the last word more carefully.
@@ -132,7 +132,7 @@ int BitSet::BitInWord(int wi, int n) const
 BitSet& BitSet::operator|=(const BitSet& other)
 {
     assert(_numBits == other._numBits);
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         _words[i] |= other._words[i];
     return *this;
 }
@@ -140,7 +140,7 @@ BitSet& BitSet::operator|=(const BitSet& other)
 BitSet& BitSet::operator&=(const BitSet& other)
 {
     assert(_numBits == other._numBits);
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         _words[i] &= other._words[i];
     return *this;
 }
@@ -148,7 +148,7 @@ BitSet& BitSet::operator&=(const BitSet& other)
 std::string BitSet::ToString() const
 {
     std::string s = "";
-    for (int i = 0; i < _numWords; i++)
+    for (size_t i = 0; i < _numWords; i++)
         s += WordString(_words[i]);
 
     // Truncate s to remove the unused bits.
