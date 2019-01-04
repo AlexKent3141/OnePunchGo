@@ -34,29 +34,29 @@ public:
     void Copy(const BitSet&);
 
     // Set the specified bit.
-    void Set(int);
+    void Set(size_t);
 
     void Set(const BitSet&);
 
     // Unset the specified bit.
-    void UnSet(int);
+    void UnSet(size_t);
 
     // Unset the specified bits.
     void UnSet(const BitSet&);
 
     // Check the state of the specified bit.
-    bool Test(int) const;
+    bool Test(size_t) const;
 
     // Count the number of set bits.
-    int Count() const;
+    size_t Count() const;
 
     // Count the number of set bits in the specified word.
-    int Count(int) const;
+    size_t Count(int) const;
 
     // Count the number of set bits in the bitwise AND of this and another BitSet.
-    int CountAnd(const BitSet&) const;
+    size_t CountAnd(const BitSet&) const;
 
-    int CountAndSparse(const BitSet&) const;
+    size_t CountAndSparse(const BitSet&) const;
 
     // Invert this BitSet in place.
     void Invert();
@@ -78,14 +78,14 @@ private:
     Word* _words = nullptr;
 
     size_t _numWords;
-    int _numBits;
+    size_t _numBits;
 
     // Get a string representation for the word.
     std::string WordString(Word) const;
     
-    int Count(Word) const;
+    size_t Count(Word) const;
 
-    int CountSparse(Word) const;
+    size_t CountSparse(Word) const;
 };
 
 // This object allows iteration over the positions of the set bits in a BitSet.

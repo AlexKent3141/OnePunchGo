@@ -36,7 +36,7 @@ void BitSet::Copy(const BitSet& other)
     memcpy(_words, other._words, _numWords*sizeof(Word));
 }
 
-void BitSet::Set(int b)
+void BitSet::Set(size_t b)
 {
     assert(b >= 0 && b < _numBits);
     _words[b / WordSize] |= One << (b % WordSize);
@@ -49,7 +49,7 @@ void BitSet::Set(const BitSet& other)
         _words[i] |= other._words[i];
 }
 
-void BitSet::UnSet(int b)
+void BitSet::UnSet(size_t b)
 {
     assert(b >= 0 && b < _numBits);
     _words[b / WordSize] &= ~(One << (b % WordSize));
@@ -62,38 +62,38 @@ void BitSet::UnSet(const BitSet& other)
         _words[i] &= ~other._words[i];
 }
 
-bool BitSet::Test(int b) const
+bool BitSet::Test(size_t b) const
 {
     assert(b < _numBits);
     return _words[b / WordSize] & (One << b % WordSize);
 }
 
-int BitSet::Count() const
+size_t BitSet::Count() const
 {
-    int s = 0;
+    size_t s = 0;
     for (size_t i = 0; i < _numWords; i++)
         s += Count(_words[i]);
     return s;
 }
 
-int BitSet::Count(int w) const
+size_t BitSet::Count(int w) const
 {
     return Count(_words[w]);
 }
 
-int BitSet::CountAnd(const BitSet& other) const
+size_t BitSet::CountAnd(const BitSet& other) const
 {
     assert(_numBits == other._numBits);
-    int s = 0;
+    size_t s = 0;
     for (size_t i = 0; i < _numWords; i++)
         s += Count(_words[i] & other._words[i]);
     return s;
 }
 
-int BitSet::CountAndSparse(const BitSet& other) const
+size_t BitSet::CountAndSparse(const BitSet& other) const
 {
     assert(_numBits == other._numBits);
-    int s = 0;
+    size_t s = 0;
     for (size_t i = 0; i < _numWords; i++)
         s += CountSparse(_words[i] & other._words[i]);
     return s;
@@ -166,7 +166,7 @@ std::string BitSet::ToString() const
     return s2;
 }
 
-int BitSet::Count(Word w) const
+size_t BitSet::Count(Word w) const
 {
     w = w - ((w >> 1) & 0x5555555555555555);
     w = (w & 0x3333333333333333) + ((w >> 2) & 0x3333333333333333);
@@ -174,7 +174,7 @@ int BitSet::Count(Word w) const
 }
 
 // Kernighan
-int BitSet::CountSparse(Word w) const
+size_t BitSet::CountSparse(Word w) const
 {
     int c;
     for (c = 0; w; c++)
