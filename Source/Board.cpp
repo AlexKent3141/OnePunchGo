@@ -71,6 +71,12 @@ Board::~Board()
         _whiteStones = nullptr;
     }
 
+    if (_empty != nullptr)
+    {
+        delete _empty;
+        _empty = nullptr;
+    }
+
     for (StoneChain& sc : _chains)
     {
         if (sc.Stones != nullptr)
@@ -299,7 +305,7 @@ std::vector<Move> Board::GetRandomLegalMoves(size_t n, RandomGenerator& gen) con
 }
 
 // Find a global move that is adjacent to an enemy group with the specified number of liberties.
-Move Board::GetRandomMoveAttackingLiberties(int liberties, RandomGenerator& gen) const
+Move Board::GetRandomMoveAttackingLiberties(size_t liberties, RandomGenerator& gen) const
 {
     std::vector<Move> attackingMoves;
     for (const auto& chain : _chains)
@@ -625,7 +631,7 @@ void Board::CreateNewChainForMove(const Move& move, uint64_t moveHash)
     BitSet* stones = new BitSet(_boardArea);
     stones->Set(move.Coord);
 
-    StoneChain c = { move.Col, neighbours->CountAnd(*_empty), stones, neighbours, moveHash, false };
+    StoneChain c = { move.Col, (size_t)neighbours->CountAnd(*_empty), stones, neighbours, moveHash, false };
     _chains.push_back(c);
 
     pt.ChainId = _chains.size()-1;

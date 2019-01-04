@@ -20,7 +20,7 @@
 struct StoneChain 
 {
     Colour Col;
-    int Liberties;
+    size_t Liberties;
     BitSet* Stones;
     BitSet* Neighbours;
     uint64_t Hash;
@@ -84,7 +84,7 @@ public:
     std::vector<Move> GetRandomLegalMoves(size_t, RandomGenerator&) const;
 
     // Get a random move which is adjacent to an enemy group with n liberties.
-    Move GetRandomMoveAttackingLiberties(int, RandomGenerator&) const;
+    Move GetRandomMoveAttackingLiberties(size_t, RandomGenerator&) const;
 
     // Get a random move which (potentially) saves a group from capture.
     Move GetRandomMoveSaving(RandomGenerator&) const;
