@@ -3,6 +3,7 @@
 
 #include "SelectionPolicy.h"
 #include <cfloat>
+#include <cmath>
 #include <iostream>
 
 // UCB selection policy.
@@ -14,31 +15,24 @@ public:
     // Select the most promising child according to the UCB algorithm.
     Node* Select(const std::vector<Node*>& children) const
     {
-        Node* bestChild = nullptr;
-        double bestVal = -DBL_MAX;
-        double val;
-        for (Node* const c : children)
-        {
-            val = Policy(c);
-
-            if (val > bestVal)
-            {
-                bestVal = val;
-                bestChild = c;
-            }
-        }
-
-        return bestChild;
+        auto score = std::bind(&UCB::Policy, *this, std::placeholders::_1);
+        return ArgMax<Node>(children, score);
     }
 
 protected:
     // This method applies the UCB formula.
-    virtual double Policy(Node* const n) const
+    virtual double Policy(Node const * const n) const
+    {
+        int totalVisits = n->Parent->Stats.Visits;
+        return totalVisits > 0
+            ? MCVal(n) + ExplorationTerm(n->Stats.Visits, totalVisits)
+            : 0;
+    }
+
+    double MCVal(Node const * const n) const
     {
         const MoveStats& stats = n->Stats;
-        int totalVisits = n->Parent->Stats.Visits;
-        double wr = (double)stats.Wins / stats.Visits;
-        return wr + ExplorationTerm(stats.Visits, totalVisits);
+        return stats.Visits > 0 ? (double)stats.Wins / stats.Visits : 0;
     }
 
     // Calculate the exploration term.

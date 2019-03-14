@@ -191,6 +191,9 @@ private:
             stats.UpdateScore(score);
             leaf = leaf->Parent;
         }
+
+        // Give the root node a visit (some selection policies need this).
+        _root->Stats.Visits++;
     }
 
     // The RAVE update effects all children of this node.
