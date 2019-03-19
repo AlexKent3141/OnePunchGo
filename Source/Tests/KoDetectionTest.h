@@ -84,7 +84,7 @@ private:
     {
         std::cout << board.ToString() << std::endl;
         int coord = StringToCoord(koCoord, N);
-        return board.CheckMove(coord) & Ko;
+        return board.CheckMove(coord) & Repetition;
     }
 
     bool StartsWith(const std::string& str, const std::string& sub) const

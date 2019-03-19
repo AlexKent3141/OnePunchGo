@@ -184,6 +184,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         int captureLoc;
         size_t capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
         size_t friendlyOrthogonals = 0;
+        size_t safeFriendlyOrthogonals = 0;
         bool friendInAtari = false;
         bool isAtari = false;
         bool isLocal = false;
@@ -198,7 +199,8 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             {
                 int nlibs = c.Liberties;
                 liberties += nlibs-1;
-                friendlyOrthogonals += nlibs > 1 ? 1 : 0;
+                ++friendlyOrthogonals;
+                safeFriendlyOrthogonals += nlibs > 1 ? 1 : 0;
                 friendInAtari = friendInAtari || nlibs == 1;
             }
             else
@@ -221,16 +223,20 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
 
         bool suicide = liberties == 0;
         bool repetition = capturesWithRepetition == 1 && IsKoRepetition(col, loc, captureLoc);
-        res = suicide ? Suicide : repetition ? Ko : Legal;
+        res = suicide ? Suicide : repetition ? Repetition : Legal;
 
         if (res & Legal)
         {
             // Do some extra work to further classify the move.
+            bool koCapture = capturesWithRepetition == 1
+              && liberties == 1
+              && friendlyOrthogonals == 0;
+
             if (isAtari) res |= Atari;
-            if (liberties == 1) res |= SelfAtari;
+            if (liberties == 1 && !koCapture) res |= SelfAtari;
             if (capturesWithRepetition > 0) res |= Capture;
             if (friendInAtari && liberties > 1) res |= Save;
-            if (IsEye(col, loc, friendlyOrthogonals)) res |= FillsEye;
+            if (IsEye(col, loc, safeFriendlyOrthogonals)) res |= FillsEye;
             if (isLocal) res |= Local;
         }
     }
