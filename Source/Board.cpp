@@ -185,6 +185,11 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         size_t capturesWithRepetition = 0; // Note: captured neighbours could be in the same group!
         size_t friendlyOrthogonals = 0;
         size_t safeFriendlyOrthogonals = 0;
+
+        // Keep track of two chain ids.
+        int chainId1 = -1;
+        int chainId2 = -1;
+
         bool friendInAtari = false;
         bool isAtari = false;
         bool isLocal = false;
@@ -202,6 +207,9 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
                 ++friendlyOrthogonals;
                 safeFriendlyOrthogonals += nlibs > 1 ? 1 : 0;
                 friendInAtari = friendInAtari || nlibs == 1;
+
+                if (chainId1 == -1) chainId1 = n->ChainId;
+                else if (chainId2 == -1 && n->ChainId != chainId1) chainId2 = n->ChainId;
             }
             else
             {
@@ -238,6 +246,7 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             if (friendInAtari && liberties > 1) res |= Save;
             if (IsEye(col, loc, safeFriendlyOrthogonals)) res |= FillsEye;
             if (isLocal) res |= Local;
+            if (chainId2 != -1) res |= Connection;
         }
     }
 
