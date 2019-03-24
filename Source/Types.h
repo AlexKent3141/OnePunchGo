@@ -24,5 +24,6 @@ const MoveInfo Pat3Match = 1 << 9;
 const MoveInfo Pat5Match = 1 << 10;
 const MoveInfo Local = 1 << 11;
 const MoveInfo Connection = 1 << 12;
+const MoveInfo EyeShape = 1 << 13;
 
 #endif // __TYPES_H__

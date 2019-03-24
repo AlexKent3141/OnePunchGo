@@ -43,6 +43,7 @@ private:
     const double SelfAtariScore = -8;
     const double SaveScore = 10;
     const double ConnectionScore = 1;
+    const double PonnukiScore = 1;
 
     // Score the move according to how good/bad it looks.
     double MoveScore(const Move& move) const
@@ -54,6 +55,7 @@ private:
         if (info & SelfAtari) score += SelfAtariScore;
         if (info & Save) score += SaveScore;
         if (info & Connection) score += ConnectionScore;
+        if (info & EyeShape) score += PonnukiScore;
 
         return score;
     }

@@ -247,6 +247,15 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             if (IsEye(col, loc, safeFriendlyOrthogonals)) res |= FillsEye;
             if (isLocal) res |= Local;
             if (chainId2 != -1) res |= Connection;
+
+            // Check whether this point is making eye shape.
+            if (friendlyOrthogonals == 0)
+            {
+                // Check for friendly diagonals.
+                const BitSet* const friendly = col == Black ? _blackStones : _whiteStones;
+                int friendlyDiag = pt.Diagonals->CountAndSparse(*friendly);
+                if (friendlyDiag >= 3) res |= EyeShape;
+            }
         }
     }
 
