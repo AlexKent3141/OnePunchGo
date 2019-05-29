@@ -139,7 +139,7 @@ private:
 
             const Move& move = expanded->Stats.LastMove;
             temp.MakeMove(move);
-            expanded->Moves = temp.GetMoves();
+            expanded->SetMoves(temp.GetMoves(), temp.Size());
             expanded->Stats.VirtualLoss();
 
             // Update the ownership map.
@@ -189,6 +189,7 @@ private:
             // Reverse the effects of virtual losses.
             stats.VirtualWin();
             stats.UpdateScore(score);
+            leaf->Update();
             leaf = leaf->Parent;
         }
 

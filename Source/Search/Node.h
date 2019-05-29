@@ -66,6 +66,7 @@ struct Node
     size_t Unexpanded;
     Node* Parent;
     std::vector<Move> Moves; // The moves that are available.
+    std::vector<Move> AllMoves;
     std::vector<Node*> Children; // The child nodes.
     std::mutex Obj; // This is used to synchronise access to the node from each TreeWorker.
 
@@ -74,6 +75,37 @@ struct Node
         for (size_t i = 0; i < Children.size(); i++)
         {
             delete Children[i];
+        }
+    }
+
+    void SetMoves(const std::vector<Move>& moves, int boardSize)
+    {
+        AllMoves = moves;
+
+        // Initially just consider local children.
+        Moves = std::vector<Move>();
+        for (const Move& m : AllMoves)
+        {
+            if (m.Coord != PassCoord)
+            {
+                int dcol = abs(m.Coord % boardSize - Stats.LastMove.Coord % boardSize);
+                int drow = abs(m.Coord / boardSize - Stats.LastMove.Coord / boardSize);
+                if (dcol + drow < 3)
+                {
+                    Moves.push_back(m);
+                }
+            }
+        }
+
+        //std::cout << "Num moves: " << Moves.size() << std::endl;
+    }
+
+    void Update()
+    {
+        if (Stats.Visits == 50)
+        {
+            //std::cout << "Reached cross-over: " << std::endl;
+            Moves = AllMoves;
         }
     }
 
