@@ -112,7 +112,7 @@ private:
     Node* Select(Board& temp, Node* root, Colour* playerOwned) const
     {
         Node* current = root;
-        while (current->FullyExpanded() && current->HasChildren())
+        while (current->Stats.Visits >= (int)current->Children.size() && current->HasChildren())
         {
             std::lock_guard<std::mutex> lk(current->Obj);
             current = _sp->Select(current->Children);
@@ -133,17 +133,23 @@ private:
     {
         Node* expanded = leaf;
         std::lock_guard<std::mutex> lk(expanded->Obj);
-        if (!expanded->FullyExpanded())
+        if (!expanded->HasChildren())
         {
-            expanded = expanded->ExpandNext();
-
-            const Move& move = expanded->Stats.LastMove;
-            temp.MakeMove(move);
             expanded->Moves = temp.GetMoves();
-            expanded->Stats.VirtualLoss();
+            expanded->AddChildren();
 
-            // Update the ownership map.
-            UpdateOwnership(move, playerOwned);
+            if (expanded->HasChildren())
+            {
+                // Select the best according to the priors.
+                expanded = _sp->Select(expanded->Children);
+                expanded->Stats.VirtualLoss();
+
+                const Move& move = expanded->Stats.LastMove;
+                temp.MakeMove(move);
+
+                // Update the ownership map.
+                UpdateOwnership(move, playerOwned);
+            }
         }
 
         return expanded;

@@ -63,7 +63,6 @@ struct MoveStats
 struct Node
 {
     MoveStats Stats;
-    size_t Unexpanded;
     Node* Parent;
     std::vector<Move> Moves; // The moves that are available.
     std::vector<Node*> Children; // The child nodes.
@@ -77,28 +76,21 @@ struct Node
         }
     }
 
-    // Check whether the node is fully expanded.
-    bool FullyExpanded() const
-    {
-        return Unexpanded >= Moves.size();
-    }
-
     // Check whether the node has children.
     bool HasChildren() const
     {
         return Children.size() > 0;
     }
 
-    // Expand the next available move.
-    Node* ExpandNext()
+    void AddChildren()
     {
-        assert(!FullyExpanded());
-        Node* next = new Node;
-        next->Stats = { Moves[Unexpanded++], 0, 0, 0, 0, false };
-        next->Unexpanded = 0;
-        next->Parent = this;
-        Children.push_back(next);
-        return next;
+        for (const Move& move : Moves)
+        {
+            Node* next = new Node;
+            next->Stats = { move, 0, 0, 0, 0, false };
+            next->Parent = this;
+            Children.push_back(next);
+        }
     }
 };
 
@@ -107,7 +99,6 @@ inline Node* MakeRoot()
 {
     Node* root = new Node;
     root->Stats = {};
-    root->Unexpanded = 0;
     root->Parent = nullptr;
     return root;
 }
