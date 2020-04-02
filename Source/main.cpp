@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
         runner.RunTests<PatternMatchTest>();
         runner.RunTests<TsumegoTest>();
     }
-    if (args->HasArg("-experiment"))
+    else if (args->HasArg("-experiment"))
     {
         // Execute the experimental tests.
         TestRunner runner;

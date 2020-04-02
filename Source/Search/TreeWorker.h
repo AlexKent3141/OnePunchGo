@@ -78,7 +78,7 @@ private:
         int boardSize = _pos->Size();
         int boardArea = boardSize*boardSize;
         Board temp(_pos->Size());
-        Colour playerOwned[boardArea];
+        Colour* playerOwned = new Colour[boardArea];
         while (!_stop)
         {
             // Clone the board state.
@@ -95,6 +95,8 @@ private:
             // Backpropagate the scores.
             UpdateScores(leaf, playerOwned, res);
         }
+
+        delete[] playerOwned;
     }
 
     Node* SelectNode(Board& temp, Colour* playerOwned) const
