@@ -1,5 +1,5 @@
 APP=OPG.out
-CXXFLAGS=-Wall -Wpedantic -std=c++11 -O3
+CXXFLAGS=-Wall -Wpedantic -O3
 LDFLAGS=-lpthread
 
 src=$(shell find ./ -type f -name '*.cpp')
