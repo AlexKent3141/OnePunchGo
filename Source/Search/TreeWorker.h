@@ -15,33 +15,12 @@ template<class SP, class PP>
 class TreeWorker
 {
 public:
-    TreeWorker(const Board& pos, Node* root, RandomGenerator* gen) : _pos(&pos)
+    TreeWorker(const Board& pos, Node* root, uint64_t seed) : _pos(&pos)
     {
         _root = root;
-        _gen = gen;
-        _sp = new SP();
-        _pp = new PP();
-    }
-
-    ~TreeWorker()
-    {
-        if (_gen != nullptr)
-        {
-            delete _gen;
-            _gen = nullptr;
-        }
-
-        if (_sp != nullptr)
-        {
-            delete _sp;
-            _sp = nullptr;
-        }
-        
-        if (_pp != nullptr)
-        {
-            delete _pp;
-            _pp = nullptr;
-        }
+        _gen = std::make_unique<RandomGenerator>(seed);
+        _sp = std::make_unique<SP>();
+        _pp = std::make_unique<PP>();
     }
 
     // Start a searching thread.
@@ -63,10 +42,10 @@ public:
 
 private:
     bool _stop = false;
-    Node* _root = nullptr;
-    SP* _sp = nullptr;
-    PP* _pp = nullptr;
-    RandomGenerator* _gen = nullptr;
+    Node* _root;
+    std::unique_ptr<SP> _sp;
+    std::unique_ptr<PP> _pp;
+    std::unique_ptr<RandomGenerator> _gen;
     Board const* _pos;
     std::mutex _mtx;
 

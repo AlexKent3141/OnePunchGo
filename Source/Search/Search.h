@@ -39,9 +39,6 @@ public:
             delete _root;
             _root = nullptr;
         }
-
-        for (TreeWorker<SP, PP>* worker : _workers) delete worker;
-        _workers.clear();
     }
 
     inline MoveStats Best() const { return _best; }
@@ -60,23 +57,23 @@ public:
         RandomGenerator seeder;
 
         // Create the workers.
-        for (TreeWorker<SP, PP>* worker : _workers) delete worker;
         _workers.clear();
 
         for (int i = 0; i < _numWorkersToUse; i++)
         {
-            auto gen = new RandomGenerator(seeder.Next());
-            _workers.push_back(new TreeWorker<SP, PP>(pos, _root, gen));
+            auto worker = std::make_unique<TreeWorker<SP, PP>>(
+                pos, _root, seeder.Next());
+            _workers.push_back(std::move(worker));
         }
 
         // Start the workers.
-        for (TreeWorker<SP, PP>* worker : _workers) worker->Start();
+        for (auto& worker : _workers) worker->Start();
     }
 
     // Stop the worker threads.
     void Stop()
     {
-        for (TreeWorker<SP, PP>* worker : _workers) worker->Stop();
+        for (auto& worker : _workers) worker->Stop();
         CollateResults();
     }
 
@@ -86,7 +83,7 @@ private:
 
     bool _stop = false;
     Node* _root = nullptr;
-    std::vector<TreeWorker<SP, PP>*> _workers;
+    std::vector<std::unique_ptr<TreeWorker<SP, PP>>> _workers;
 
     int _treeSize = 0;
     MoveStats _best;
