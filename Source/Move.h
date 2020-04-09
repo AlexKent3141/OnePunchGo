@@ -64,9 +64,10 @@ inline std::string MoveToString(const Move& move, int n)
 
 inline Move StringToMove(const std::string& str, int n)
 {
+    Utils utils;
     Colour col = str[0] == 'B' ? Black : White;
     std::string coordStr = str.substr(2);
-    int coord = Utils::GetInstance()->ToLower(coordStr) == "pass"
+    int coord = utils.ToLower(coordStr) == "pass"
         ? PassCoord
         : StringToCoord(coordStr, n);
 

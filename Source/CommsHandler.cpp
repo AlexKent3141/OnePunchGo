@@ -16,10 +16,11 @@
 bool CommsHandler::Process(const std::string& message)
 {
     Log("Received: " + message);
+    Utils utils;
     bool alive = true;
 
     std::string cmd = PreProcess(message);
-    auto tokens = Utils::GetInstance()->Split(cmd, ' ');
+    auto tokens = utils.Split(cmd, ' ');
     if (tokens.size() > 0)
     {
         int i = 0;
@@ -98,7 +99,7 @@ bool CommsHandler::Process(const std::string& message)
         else if (command == "genmove")
         {
             // Construct the current board state.
-            std::string colString = Utils::GetInstance()->ToLower(tokens[i]);
+            std::string colString = utils.ToLower(tokens[i]);
             Colour col = colString == "black" || colString == "b" ? Black : White;
             Board board(col, _boardSize, _history);
 
@@ -158,7 +159,7 @@ bool CommsHandler::Process(const std::string& message)
         }
         else if (command == "time_left")
         {
-            std::string colString = Utils::GetInstance()->ToLower(tokens[i]);
+            std::string colString = utils.ToLower(tokens[i]);
             Colour col = colString == "black" || colString == "b" ? Black : White;
             int timeLeft = stoi(tokens[i+1]);
             int stonesLeft = stoi(tokens[i+2]);

@@ -23,7 +23,8 @@ public:
     {
         // There should be one line containing the board size and search duration.
         assert(lines.size() == 1);
-        auto split = Utils::GetInstance()->Split(lines[0], ' ');
+        Utils utils;
+        auto split = utils.Split(lines[0], ' ');
         assert(split.size() == 2);
 
         int boardSize = stoi(split[0]);

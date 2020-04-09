@@ -27,6 +27,14 @@ void PatternMatcher::CleanUp()
 {
     if (_patterns != nullptr)
     {
+        for (size_t i = 0; i < MaxPatternSize + 1; i++)
+        {
+            for (Pattern* p : _patterns[i])
+            {
+                delete p;
+            }
+        }
+
         delete[] _patterns;
         _patterns = nullptr;
     }

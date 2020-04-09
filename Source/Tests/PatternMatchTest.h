@@ -20,6 +20,7 @@ public:
     bool Run(const std::vector<std::string>& lines)
     {
         std::vector<Move> moves;
+        Utils utils;
         Colour colourToMove = Black;
         bool isMatch = false;
 
@@ -43,7 +44,7 @@ public:
             }
             else if (readingResult)
             {
-                auto split = Utils::GetInstance()->Split(line, ' ');
+                auto split = utils.Split(line, ' ');
                 colourToMove = split[0] == "B" ? Black : White;
                 isMatch = split[1] == "True";
             }
