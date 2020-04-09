@@ -4,6 +4,7 @@
 #include "../Move.h"
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <mutex>
 
 // The statistics for the move.
@@ -60,21 +61,15 @@ struct MoveStats
 };
 
 // A node in the dynamically generated MCTS tree.
-struct Node
+struct Node : std::enable_shared_from_this<Node>
 {
     MoveStats Stats;
-    Node* Parent;
+    std::weak_ptr<Node> Parent;
     std::vector<Move> Moves; // The moves that are available.
-    std::vector<Node*> Children; // The child nodes.
-    std::mutex Obj; // This is used to synchronise access to the node from each TreeWorker.
+    std::vector<std::shared_ptr<Node>> Children; // The child nodes.
 
-    ~Node()
-    {
-        for (size_t i = 0; i < Children.size(); i++)
-        {
-            delete Children[i];
-        }
-    }
+    // This is used to synchronise access to the node from each TreeWorker.
+    std::mutex Obj;
 
     // Check whether the node has children.
     bool HasChildren() const
@@ -86,20 +81,20 @@ struct Node
     {
         for (const Move& move : Moves)
         {
-            Node* next = new Node;
+            auto next = std::make_shared<Node>();
             next->Stats = { move, 0, 0, 0, 0, false };
-            next->Parent = this;
+            next->Parent = shared_from_this();
             Children.push_back(next);
         }
     }
 };
 
 // Make the root node for the tree.
-inline Node* MakeRoot()
+inline std::shared_ptr<Node> MakeRoot()
 {
-    Node* root = new Node;
+    auto root = std::make_shared<Node>();
     root->Stats = {};
-    root->Parent = nullptr;
+    root->Parent = std::weak_ptr<Node>();
     return root;
 }
 

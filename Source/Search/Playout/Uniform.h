@@ -8,7 +8,9 @@ class Uniform : public PlayoutPolicy
 {
 public:
     // Choose a move using uniform random distribution.
-    Move Select(const Board& board, const Move& lastMove)
+    Move Select(
+        const Board& board,
+        const Move& lastMove)
     {
         if (board.GameOver())
             return BadMove;

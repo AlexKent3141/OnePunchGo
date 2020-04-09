@@ -15,7 +15,12 @@ template<class SP, class PP>
 class TreeWorker
 {
 public:
-    TreeWorker(const Board& pos, Node* root, uint64_t seed) : _pos(&pos)
+    TreeWorker(
+        const Board& pos,
+        std::shared_ptr<Node> root,
+        uint64_t seed)
+    :
+        _pos(&pos)
     {
         _root = root;
         _gen = std::make_unique<RandomGenerator>(seed);
@@ -42,7 +47,7 @@ public:
 
 private:
     bool _stop = false;
-    Node* _root;
+    std::shared_ptr<Node> _root;
     std::unique_ptr<SP> _sp;
     std::unique_ptr<PP> _pp;
     std::unique_ptr<RandomGenerator> _gen;
@@ -66,7 +71,8 @@ private:
             // Reset the player ownership map.
             memset(playerOwned, None, boardArea*sizeof(Colour));
 
-            Node* leaf = SelectNode(temp, playerOwned);
+            std::shared_ptr<Node> leaf =
+                SelectNode(temp, playerOwned);
 
             // Perform a playout and record the result.
             int res = Simulate(temp, leaf->Stats.LastMove, playerOwned);
@@ -78,10 +84,13 @@ private:
         delete[] playerOwned;
     }
 
-    Node* SelectNode(Board& temp, Colour* playerOwned) const
+    std::shared_ptr<Node> SelectNode(
+        Board& temp,
+        Colour* playerOwned) const
     {
         // Find the leaf node which must be expanded.
-        Node* leaf = Select(temp, _root, playerOwned);
+        std::shared_ptr<Node> leaf =
+            Select(temp, playerOwned);
 
         // Expand the leaf node.
         leaf = Expand(temp, leaf, playerOwned);
@@ -90,10 +99,14 @@ private:
     }
 
     // Select a node to expand.
-    Node* Select(Board& temp, Node* root, Colour* playerOwned) const
+    std::shared_ptr<Node> Select(
+        Board& temp,
+        Colour* playerOwned) const
     {
-        Node* current = root;
-        while (current->Stats.Visits >= (int)current->Children.size() && current->HasChildren())
+        std::shared_ptr<Node> current = _root;
+        while (
+            current->Stats.Visits >= (int)current->Children.size() &&
+            current->HasChildren())
         {
             std::lock_guard<std::mutex> lk(current->Obj);
             current = _sp->Select(current->Children);
@@ -110,9 +123,12 @@ private:
     }
 
     // Expand the chosen leaf node.
-    Node* Expand(Board& temp, Node* leaf, Colour* playerOwned) const
+    std::shared_ptr<Node> Expand(
+        Board& temp,
+        std::shared_ptr<Node> leaf,
+        Colour* playerOwned) const
     {
-        Node* expanded = leaf;
+        std::shared_ptr<Node> expanded = leaf;
         std::lock_guard<std::mutex> lk(expanded->Obj);
         if (!expanded->HasChildren())
         {
@@ -137,9 +153,13 @@ private:
     }
 
     // Perform a simulation from the specified game state.
-    int Simulate(Board& temp, const Move& lastMove, Colour* playerOwned) const
+    int Simulate(
+        Board& temp,
+        const Move& lastMove,
+        Colour* playerOwned) const
     {
-        // Make moves according to the playout policy until a terminal state is reached.
+        // Make moves according to the playout policy until a
+        // terminal state is reached.
         Move move = lastMove;
         while ((move = _pp->Select(temp, move)) != BadMove)
         {
@@ -151,7 +171,9 @@ private:
     }
 
     // Update the ownership map used in RAVE calculations.
-    void UpdateOwnership(const Move& move, Colour* playerOwned) const
+    void UpdateOwnership(
+        const Move& move,
+        Colour* playerOwned) const
     {
         int coord = move.Coord;
         if (coord != PassCoord && playerOwned[coord] == None)
@@ -161,7 +183,10 @@ private:
     }
 
     // Backpropagate the score from the simulation up the tree.
-    void UpdateScores(Node* leaf, Colour* playerOwned, int score) const
+    void UpdateScores(
+        std::shared_ptr<Node> leaf,
+        Colour* playerOwned,
+        int score) const
     {
         // Backtrack the scores up the tree.
         while (leaf != nullptr)
@@ -176,7 +201,8 @@ private:
             // Reverse the effects of virtual losses.
             stats.VirtualWin();
             stats.UpdateScore(score);
-            leaf = leaf->Parent;
+
+            leaf = leaf->Parent.expired() ? nullptr : leaf->Parent.lock();
         }
 
         // Give the root node a visit (some selection policies need this).
@@ -184,14 +210,17 @@ private:
     }
 
     // The RAVE update effects all children of this node.
-    // The ultimate effect is that all siblings of nodes that were traversed during selection phase 
-    // will potentially be updated.
-    void RaveUpdate(Node* node, Colour* playerOwned, int score) const
+    // The ultimate effect is that all siblings of nodes that were
+    // traversed during selection phase will potentially be updated.
+    void RaveUpdate(
+        std::shared_ptr<Node> node,
+        Colour* playerOwned,
+        int score) const
     {
         // Update the node if possible.
         if (node != nullptr)
         {
-            for (Node* child : node->Children)
+            for (std::shared_ptr<Node> child : node->Children)
             {
                 // Update this child's stats.
                 MoveStats& stats = child->Stats;

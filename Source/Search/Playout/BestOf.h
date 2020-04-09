@@ -11,7 +11,9 @@ class BestOf : public PlayoutPolicy
 {
 public:
     // Randomly select N legal moves and decide which one looks more promising.
-    Move Select(const Board& board, const Move& lastMove)
+    Move Select(
+        const Board& board,
+        const Move& lastMove)
     {
         if (board.GameOver())
             return BadMove;
