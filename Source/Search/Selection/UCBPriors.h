@@ -8,8 +8,7 @@
 class UCBPriors : public UCB1
 {
 protected:
-    virtual double Policy(
-        std::shared_ptr<Node> const n) const
+    virtual double Policy(Node* const n) const
     {
         const MoveStats& stats = n->Stats;
 

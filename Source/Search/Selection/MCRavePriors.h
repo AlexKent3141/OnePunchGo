@@ -3,17 +3,17 @@
 
 #include "MCRave.h"
 #include <utility>
+#include <cassert>
 
 // The MCRave selection policy with priors associated to some types of moves.
 class MCRavePriors : public MCRave
 {
 public:
-    std::shared_ptr<Node> Select(
-        const std::vector<std::shared_ptr<Node>>& children) const
+    Node* Select(const std::vector<Node*>& children) const
     {
-        for (std::shared_ptr<Node> const child : children)
+        for (Node* const c : children)
         {
-            PriorUpdateAll(child->Stats);
+            PriorUpdateAll(c->Stats);
         }
 
         return MCRave::Select(children);
@@ -46,8 +46,7 @@ private:
     {
         if (stats.LastMove.Info & moveType)
         {
-            // Apply the priors to the RAVE values so that they effect
-            // early selections.
+            // Apply the priors to the RAVE values so that they effect early selections.
             stats.RaveVisits += prior.first;
             stats.RaveWins += prior.second;
         }

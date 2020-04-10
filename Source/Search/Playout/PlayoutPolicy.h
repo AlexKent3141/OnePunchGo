@@ -9,9 +9,7 @@
 class PlayoutPolicy
 {
 public:
-    virtual Move Select(
-        const Board& board,
-        const Move& lastMove)
+    virtual Move Select(const Board& board, const Move& lastMove)
     {
         return board.GetMoves(true)[0];
     }

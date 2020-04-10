@@ -18,10 +18,8 @@
 template<class SP, class PP>
 class Search
 {
-static_assert(std::is_base_of<SelectionPolicy, SP>::value,
-    "Not a valid selection policy.");
-static_assert(std::is_base_of<PlayoutPolicy, PP>::value,
-    "Not a valid playout policy.");
+static_assert(std::is_base_of<SelectionPolicy, SP>::value, "Not a valid selection policy.");
+static_assert(std::is_base_of<PlayoutPolicy, PP>::value, "Not a valid playout policy.");
 public:
     Search()
     {
@@ -34,6 +32,15 @@ public:
         }
     }
 
+    ~Search()
+    {
+        if (_root != nullptr)
+        {
+            delete _root;
+            _root = nullptr;
+        }
+    }
+
     inline MoveStats Best() const { return _best; }
 
     inline int TreeSize() const { return _treeSize; }
@@ -42,6 +49,7 @@ public:
     void Start(const Board& pos)
     {
         // Create the root of the tree.
+        if (_root != nullptr) delete _root;
         _root = MakeRoot();
         _root->Moves = pos.GetMoves();
 
@@ -74,7 +82,7 @@ private:
     int _numWorkersToUse;
 
     bool _stop = false;
-    std::shared_ptr<Node> _root;
+    Node* _root = nullptr;
     std::vector<std::unique_ptr<TreeWorker<SP, PP>>> _workers;
 
     int _treeSize = 0;
@@ -84,8 +92,9 @@ private:
     {
         // Find the most promising move and cache stats.
         int highestVisits = -1;
-        for (std::shared_ptr<Node> child : _root->Children)
+        for (size_t i = 0; i < _root->Children.size(); i++)
         {
+            Node const* const child = _root->Children[i];
             if (child->Stats.Visits > highestVisits)
             {
                 highestVisits = child->Stats.Visits;

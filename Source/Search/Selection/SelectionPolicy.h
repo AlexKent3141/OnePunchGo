@@ -5,14 +5,12 @@
 #include <cfloat>
 #include <vector>
 #include <functional>
-#include <memory>
 
 // A selection policy defines a method which attempts to select the most promising child node.
 class SelectionPolicy
 {
 public:
-    virtual std::shared_ptr<Node> Select(
-        const std::vector<std::shared_ptr<Node>>& children) const
+    virtual Node* Select(const std::vector<Node*>& children) const
     {
         return children[0];
     }
@@ -21,13 +19,11 @@ public:
 
 protected:
     template<typename T>
-    std::shared_ptr<T> ArgMax(
-        const std::vector<std::shared_ptr<T>>& args,
-        std::function<double(std::shared_ptr<T> const)> score) const
+    T* ArgMax(const std::vector<T*>& args, std::function<double(T* const)> score) const
     {
-        std::shared_ptr<T> best = nullptr;
+        T* best = nullptr;
         double bestVal = -DBL_MAX;
-        for (std::shared_ptr<T> arg : args)
+        for (T* arg : args)
         {
             double val = score(arg);
             if (val > bestVal)

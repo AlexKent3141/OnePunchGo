@@ -13,8 +13,7 @@ class UCB : SelectionPolicy
 {
 public:
     // Select the most promising child according to the UCB algorithm.
-    std::shared_ptr<Node> Select(
-        const std::vector<std::shared_ptr<Node>>& children) const
+    Node* Select(const std::vector<Node*>& children) const
     {
         auto score = std::bind(&UCB::Policy, *this, std::placeholders::_1);
         return ArgMax<Node>(children, score);
@@ -22,8 +21,7 @@ public:
 
 protected:
     // This method applies the UCB formula.
-    virtual double Policy(
-        std::shared_ptr<Node> const n) const
+    virtual double Policy(Node const * const n) const
     {
         int totalVisits = n->Parent->Stats.Visits;
         return totalVisits > 0
@@ -31,8 +29,7 @@ protected:
             : 0;
     }
 
-    double MCVal(
-        std::shared_ptr<Node> const n) const
+    double MCVal(Node const * const n) const
     {
         const MoveStats& stats = n->Stats;
         return stats.Visits > 0 ? (double)stats.Wins / stats.Visits : 0;
