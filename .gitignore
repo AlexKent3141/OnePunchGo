@@ -1,4 +1,5 @@
-Source/CommsLog.txt
+src/CommsLog.txt
+build/
 
 # Compiled Object files
 *.slo
