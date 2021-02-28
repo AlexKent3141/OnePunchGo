@@ -22,7 +22,7 @@ public:
         
         // Parse the tests file and process the test cases.
         // Need to adjust path as we will be executing from the directory above.
-        std::ifstream file("Tests/" + testsPath);
+        std::ifstream file("test_suites/" + testsPath);
         std::string line;
         bool pass = true;
         bool inTest = false;
