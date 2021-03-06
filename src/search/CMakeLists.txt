@@ -1,16 +1,13 @@
 
 add_library(search
-  SHARED
-    Current.h
-    Node.h
-    Search.h
-    TreeWorker.h)
+  INTERFACE)
 
-set_target_properties(search
-  PROPERTIES
-    LINKER_LANGUAGE CXX)
+target_include_directories(search
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(Threads REQUIRED)
     
 target_link_libraries(search
-  Threads::Threads)
+  INTERFACE
+    Threads::Threads)

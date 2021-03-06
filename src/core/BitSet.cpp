@@ -3,6 +3,25 @@
 #include <cmath>
 #include <cstring>
 
+#ifdef _MSC_VER
+
+#include "intrin.h"
+
+int lsb(Word w)
+{
+    if (!w) return -1;
+    unsigned long b;
+    _BitScanForward64(&b, w);
+    return int(b);
+}
+#else
+int lsb(Word w)
+{
+    if (!w) return -1;
+    return __builtin_ctzll(w);
+}
+#endif
+
 BitSet::BitSet(int size)
 {
     _numBits = size;
@@ -122,7 +141,7 @@ int BitSet::BitInWord(int wi, int n) const
     int i = 0;
     while (i++ <= n)
     {
-        b = __builtin_ffsll(w)-1;
+        b = lsb(w);
         w &= ~(One << b);
     }
 
@@ -199,7 +218,7 @@ int BitIterator::Next()
     bool found = false;
     while (!found && _wi < _bs.NumWords())
     {
-        _i = __builtin_ffsll(_cw)-1;
+        _i = lsb(_cw);
         if (_i < 0)
         {
             // Move to next word.

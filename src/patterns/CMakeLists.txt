@@ -1,6 +1,6 @@
 
 add_library(patterns
-  SHARED
+  STATIC
     PatternMatcher.cpp)
 
 file(

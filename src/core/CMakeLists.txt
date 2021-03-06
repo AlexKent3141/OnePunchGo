@@ -1,6 +1,6 @@
 
 add_library(core
-  SHARED
+  STATIC
     Args.cpp
     BitSet.cpp
     Board.cpp

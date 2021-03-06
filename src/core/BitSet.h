@@ -103,7 +103,8 @@ public:
 
 private:
     const BitSet& _bs;
-    int _wi, _i;
+    int _wi;
+    int _i;
     Word _cw;
 };
 
