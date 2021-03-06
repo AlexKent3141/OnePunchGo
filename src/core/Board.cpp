@@ -195,14 +195,16 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
         bool isLocal = false;
         for (const Point* const n : pt.Neighbours)
         {
-            const StoneChain& c = _chains[n->ChainId];
             if (n->Col == None)
             {
                 ++liberties;
+                continue;
             }
-            else if (n->Col == col)
+
+            const StoneChain& c = _chains[n->ChainId];
+            int nlibs = c.Liberties;
+            if (n->Col == col)
             {
-                int nlibs = c.Liberties;
                 liberties += nlibs-1;
                 ++friendlyOrthogonals;
                 safeFriendlyOrthogonals += nlibs > 1 ? 1 : 0;
@@ -213,7 +215,6 @@ MoveInfo Board::CheckMove(Colour col, int loc) const
             }
             else
             {
-                int nlibs = c.Liberties;
                 if (nlibs == 1)
                 {
                     ++liberties;
