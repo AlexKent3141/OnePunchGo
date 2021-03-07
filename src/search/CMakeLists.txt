@@ -10,4 +10,5 @@ find_package(Threads REQUIRED)
     
 target_link_libraries(search
   INTERFACE
-    Threads::Threads)
+    Threads::Threads
+    lurien)

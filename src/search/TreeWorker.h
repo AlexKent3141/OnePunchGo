@@ -8,6 +8,7 @@
 #include "core/RandomGenerator.h"
 #include <mutex>
 #include <thread>
+#include "lurien.h"
 
 // This class performs the MCTS algorithm to find the best move.
 // It contains the code that is executed by each worker thread.
@@ -52,6 +53,8 @@ private:
     // This method keeps searching until a call to Stop is made.
     void DoSearch()
     {
+        LURIEN_SCOPE(search)
+
         std::unique_lock<std::mutex> lock(_mtx);
 
         int boardSize = _pos->Size();
@@ -80,6 +83,8 @@ private:
 
     Node* SelectNode(Board& temp, Colour* playerOwned) const
     {
+        LURIEN_SCOPE(select)
+
         // Find the leaf node which must be expanded.
         Node* leaf = Select(temp, _root, playerOwned);
 
@@ -112,6 +117,8 @@ private:
     // Expand the chosen leaf node.
     Node* Expand(Board& temp, Node* leaf, Colour* playerOwned) const
     {
+        LURIEN_SCOPE(expand)
+
         Node* expanded = leaf;
         std::lock_guard<std::mutex> lk(expanded->Obj);
         if (!expanded->HasChildren())
@@ -139,6 +146,8 @@ private:
     // Perform a simulation from the specified game state.
     int Simulate(Board& temp, const Move& lastMove, Colour* playerOwned) const
     {
+        LURIEN_SCOPE(simulate)
+
         // Make moves according to the playout policy until a terminal state is reached.
         Move move = lastMove;
         while ((move = _pp->Select(temp, move)) != BadMove)
@@ -163,6 +172,8 @@ private:
     // Backpropagate the score from the simulation up the tree.
     void UpdateScores(Node* leaf, Colour* playerOwned, int score) const
     {
+        LURIEN_SCOPE(update)
+
         // Backtrack the scores up the tree.
         while (leaf != nullptr)
         {

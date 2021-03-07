@@ -7,11 +7,14 @@
 #include "PatternMatchTest.h"
 #include "TsumegoTest.h"
 #include "ExperimentTest.h"
+#include "lurien.h"
 #include <iostream>
 #include <string>
 
 int main(int argc, char* argv[])
 {
+    LURIEN_INIT(std::make_unique<lurien::DefaultOutputReceiver>(std::cout))
+
     PatternMatcher::Load("pat3_v1.txt", 3);
     PatternMatcher::Load("pat5.txt", 5);
 
@@ -39,6 +42,8 @@ int main(int argc, char* argv[])
     }
 
     PatternMatcher::CleanUp();
+
+    LURIEN_STOP
 
     return 0;
 }
