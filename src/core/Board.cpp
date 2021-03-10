@@ -24,7 +24,7 @@ Board::Board(Colour colourToMove, const std::vector<std::string>& s)
             c = s[i][j];
             Colour col = c == 'B' ? Black : c == 'W' ? White : None;
             if (col != None)
-                MakeMove({ col, loc });
+                MakeMove({ col, loc, 0 });
         }
     }
 

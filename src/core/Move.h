@@ -28,7 +28,7 @@ struct Move
 };
 
 // This represents an invalid move.
-const Move BadMove = { None, BadCoord };
+const Move BadMove = { None, BadCoord, 0 };
 
 inline int StringToCoord(const std::string& str, int n)
 {
@@ -71,7 +71,7 @@ inline Move StringToMove(const std::string& str, int n)
         ? PassCoord
         : StringToCoord(coordStr, n);
 
-    return {col, coord};
+    return {col, coord, 0};
 }
 
 #endif // __MOVE_H__

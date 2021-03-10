@@ -262,7 +262,7 @@ bool CommsHandler::IsInteger(const std::string& s) const
 {
     bool res = true;
     for (size_t i = 0; i < s.size(); i++)
-        res &= isdigit(s[i]);
+        res &= bool(isdigit(s[i]));
 
     return res;
 }

@@ -118,7 +118,7 @@ private:
     BitSet* _blackStones = nullptr;
     BitSet* _whiteStones = nullptr;
     std::vector<StoneChain> _chains;
-    Move _lastMove = { None, PassCoord };
+    Move _lastMove = { None, PassCoord, 0 };
 
     // Initialise an empty board of the specified size.
     void InitialiseEmpty(int);

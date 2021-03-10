@@ -13,6 +13,8 @@ public:
     // Randomly select N legal moves and decide which one looks more promising.
     Move Select(const Board& board, const Move& lastMove)
     {
+        (void)lastMove;
+
         if (board.GameOver())
             return BadMove;
 

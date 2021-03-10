@@ -57,7 +57,7 @@ void BitSet::Copy(const BitSet& other)
 
 void BitSet::Set(size_t b)
 {
-    assert(b >= 0 && b < _numBits);
+    assert(b < _numBits);
     _words[b / WordSize] |= One << (b % WordSize);
 }
 
@@ -70,7 +70,7 @@ void BitSet::Set(const BitSet& other)
 
 void BitSet::UnSet(size_t b)
 {
-    assert(b >= 0 && b < _numBits);
+    assert(b < _numBits);
     _words[b / WordSize] &= ~(One << (b % WordSize));
 }
 
